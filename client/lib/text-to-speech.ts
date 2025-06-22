@@ -45,11 +45,17 @@ class TextToSpeechService {
   }
 
   private initializeTTS(): void {
+    // Check if we're in a browser environment
+    if (typeof window === 'undefined') {
+      this.isSupported = false;
+      return;
+    }
+
     if ('speechSynthesis' in window) {
       this.synthesis = window.speechSynthesis;
       this.isSupported = true;
       this.loadVoices();
-      
+
       // Load voices when they become available
       if (speechSynthesis.onvoiceschanged !== undefined) {
         speechSynthesis.onvoiceschanged = () => {
@@ -63,6 +69,8 @@ class TextToSpeechService {
   }
 
   private loadVoices(): void {
+    if (!this.synthesis) return;
+
     this.availableVoices = this.synthesis.getVoices();
     
     // Set default voice if not already set
@@ -325,8 +333,70 @@ class TextToSpeechService {
   }
 }
 
-// Export singleton instance
-export const textToSpeechService = new TextToSpeechService();
+// Lazy-loaded singleton instance
+let textToSpeechServiceInstance: TextToSpeechService | null = null;
+
+export const textToSpeechService = {
+  getInstance(): TextToSpeechService {
+    if (!textToSpeechServiceInstance) {
+      textToSpeechServiceInstance = new TextToSpeechService();
+    }
+    return textToSpeechServiceInstance;
+  },
+
+  // Proxy methods for backward compatibility
+  isTTSSupported(): boolean {
+    return this.getInstance().isTTSSupported();
+  },
+
+  isCurrentlySpeaking(): boolean {
+    return this.getInstance().isCurrentlySpeaking();
+  },
+
+  isCurrentlyPaused(): boolean {
+    return this.getInstance().isCurrentlyPaused();
+  },
+
+  getAvailableVoices(): TTSVoice[] {
+    return this.getInstance().getAvailableVoices();
+  },
+
+  speak(text: string, callbacks?: TTSCallbacks): boolean {
+    return this.getInstance().speak(text, callbacks);
+  },
+
+  pause(): void {
+    return this.getInstance().pause();
+  },
+
+  resume(): void {
+    return this.getInstance().resume();
+  },
+
+  stop(): void {
+    return this.getInstance().stop();
+  },
+
+  updateConfig(newConfig: Partial<TTSConfig>): void {
+    return this.getInstance().updateConfig(newConfig);
+  },
+
+  setVoiceByName(voiceName: string): boolean {
+    return this.getInstance().setVoiceByName(voiceName);
+  },
+
+  setVoiceByLanguage(language: string): boolean {
+    return this.getInstance().setVoiceByLanguage(language);
+  },
+
+  getConfig(): TTSConfig {
+    return this.getInstance().getConfig();
+  },
+
+  getMedicalVoices(): TTSVoice[] {
+    return this.getInstance().getMedicalVoices();
+  }
+};
 
 // Export class for testing
 export { TextToSpeechService };

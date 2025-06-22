@@ -11,7 +11,6 @@ import {
   Stethoscope,
   Bot,
   Pill,
-  BookOpen,
   Phone,
   MapPin,
   Video,
@@ -56,15 +55,6 @@ const quickActions = [
     color: "from-green-500 to-green-600",
     badge: "Same Day",
     gradient: "bg-gradient-to-br from-green-50 to-green-100",
-  },
-  {
-    title: "Health Tips",
-    description: "Educational videos and articles",
-    icon: BookOpen,
-    href: "/health-tips",
-    color: "from-orange-500 to-orange-600",
-    badge: "Offline Mode",
-    gradient: "bg-gradient-to-br from-orange-50 to-orange-100",
   },
   {
     title: "Emergency",

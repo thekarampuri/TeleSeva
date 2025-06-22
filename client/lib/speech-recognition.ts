@@ -226,6 +226,10 @@ class SpeechRecognitionService {
    * Check microphone permission status
    */
   async checkMicrophonePermission(): Promise<'granted' | 'denied' | 'prompt'> {
+    if (typeof window === 'undefined' || !navigator.permissions) {
+      return 'prompt';
+    }
+
     try {
       const permission = await navigator.permissions.query({ name: 'microphone' as PermissionName });
       return permission.state;
@@ -236,8 +240,58 @@ class SpeechRecognitionService {
   }
 }
 
-// Export singleton instance
-export const speechRecognitionService = new SpeechRecognitionService();
+// Lazy-loaded singleton instance
+let speechRecognitionServiceInstance: SpeechRecognitionService | null = null;
+
+export const speechRecognitionService = {
+  getInstance(): SpeechRecognitionService {
+    if (!speechRecognitionServiceInstance) {
+      speechRecognitionServiceInstance = new SpeechRecognitionService();
+    }
+    return speechRecognitionServiceInstance;
+  },
+
+  // Proxy methods for backward compatibility
+  isRecognitionSupported(): boolean {
+    return this.getInstance().isRecognitionSupported();
+  },
+
+  isCurrentlyListening(): boolean {
+    return this.getInstance().isCurrentlyListening();
+  },
+
+  startListening(
+    onResult: SpeechRecognitionCallback,
+    onError: SpeechRecognitionErrorCallback,
+    onEnd?: () => void
+  ): boolean {
+    return this.getInstance().startListening(onResult, onError, onEnd);
+  },
+
+  stopListening(): void {
+    return this.getInstance().stopListening();
+  },
+
+  abortListening(): void {
+    return this.getInstance().abortListening();
+  },
+
+  updateConfig(newConfig: Partial<SpeechRecognitionConfig>): void {
+    return this.getInstance().updateConfig(newConfig);
+  },
+
+  getSupportedLanguages(): string[] {
+    return this.getInstance().getSupportedLanguages();
+  },
+
+  async requestMicrophonePermission(): Promise<boolean> {
+    return this.getInstance().requestMicrophonePermission();
+  },
+
+  async checkMicrophonePermission(): Promise<'granted' | 'denied' | 'prompt'> {
+    return this.getInstance().checkMicrophonePermission();
+  }
+};
 
 // Export class for testing
 export { SpeechRecognitionService };

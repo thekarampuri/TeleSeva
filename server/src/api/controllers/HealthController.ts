@@ -32,20 +32,7 @@ export class HealthController {
     }
   }
 
-  async getHealthTips(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      // TODO: Implement get health tips logic
-      res.status(200).json({
-        success: true,
-        message: 'Health tips retrieved successfully',
-        data: {
-          // health tips data
-        },
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
+
 
   async getNearbyFacilities(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {

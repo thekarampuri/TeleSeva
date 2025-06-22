@@ -10,9 +10,6 @@ router.get('/symptoms', healthController.getSymptoms);
 // POST /api/health/symptom-check
 router.post('/symptom-check', healthController.checkSymptoms);
 
-// GET /api/health/tips
-router.get('/tips', healthController.getHealthTips);
-
 // GET /api/health/facilities
 router.get('/facilities', healthController.getNearbyFacilities);
 

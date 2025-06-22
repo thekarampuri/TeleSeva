@@ -13,8 +13,6 @@ Hackstorm/
 │   │   ├── disease-alerts/          # Disease alert system
 │   │   ├── emergency/               # Emergency services
 │   │   ├── facility-finder/         # Healthcare facility locator
-│   │   ├── gamification/            # Gamification features
-│   │   ├── health-tips/             # Health tips and articles
 │   │   ├── medicine/                # Medicine management
 │   │   ├── notifications/           # Notification system
 │   │   ├── reports/                 # Health reports
@@ -178,8 +176,6 @@ A comprehensive Firestore service is available in `client/lib/firestore.ts` with
 - **🏢 Facility Finder**: Locate nearby healthcare facilities
 - **📊 Health Reports**: Personal health data visualization
 - **🔔 Notifications**: Real-time health alerts and reminders
-- **🎮 Gamification**: Health challenges and rewards
-- **📚 Health Tips**: Educational content and wellness advice
 - **🔐 Secure Authentication**: Firebase-powered user management
 
 ## 🤝 Contributing
