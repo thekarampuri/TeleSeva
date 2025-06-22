@@ -1,104 +1,104 @@
-# Screenshots Directory
+# TeleSeva Application Screenshots
 
-This directory contains screenshots of the TeleSeva application for documentation purposes.
+This directory contains screenshots of the TeleSeva application showcasing its key features and user interface.
 
-## Required Screenshots
+## Application Screenshots
 
-To complete the README.md documentation, please add the following screenshots:
+### 1. Authentication Page
+![Authentication Page](Screenshot%202025-06-22%20211856.png)
 
-### 1. Home Dashboard (`home-dashboard.png`)
-- Navigate to `http://localhost:3000`
-- Take a full-page screenshot showing:
-  - Hero section with gradient text
-  - Quick stats cards (Doctors Available, Response Time, Patient Satisfaction)
-  - Service cards grid
-  - Beautiful gradient background
+The authentication page features a modern design with:
+- Login/signup form with role selection (Patient/Doctor)
+- Feature highlights showcasing security, instant access, and verified doctors
+- "Continue as Guest" option for quick access
+- Beautiful gradient background with the TeleSeva branding
+- Team attribution footer showing "Made by team DeepShip for HackStorm"
 
-### 2. Authentication Page (`auth-page.png`)
-- Navigate to `http://localhost:3000/auth`
-- Take a screenshot showing:
-  - Login/signup form
-  - Feature highlights on the left
-  - "Continue as Guest" option
-  - Gradient background design
+### 2. Patient Dashboard
+![Patient Dashboard](Screenshot%202025-06-22%20211919.png)
 
-### 3. Facility Finder (`facility-finder.png`)
-- Navigate to `http://localhost:3000/facility-finder`
-- Take a screenshot showing:
-  - Location detection interface
-  - Facility type filters
-  - Search functionality
-  - Mock facility listings
+The patient dashboard provides:
+- Welcome message with gradient text styling
+- Quick access to core healthcare services
+- Service cards for Symptom Checker, Consultation, Medicine, Emergency, etc.
+- Clean and intuitive navigation
+- Responsive design with modern UI components
 
-### 4. Doctor Consultation (`consultation.png`)
-- Navigate to `http://localhost:3000/consultation`
-- Take a screenshot showing:
-  - Available doctors
-  - Consultation mode options (video, audio, chat)
-  - Booking interface
+### 3. Symptom Checker Interface
+![Symptom Checker](Screenshot%202025-06-22%20211937.png)
 
-### 5. Symptom Checker (`symptom-checker.png`)
-- Navigate to `http://localhost:3000/symptom-checker`
-- Take a screenshot showing:
-  - AI-powered interface
-  - Symptom input options
-  - Voice support features
+The AI-powered symptom checker features:
+- Interactive chat interface for symptom input
+- Voice input capabilities with microphone support
+- Real-time AI responses using Google Gemini API
+- Clean conversation flow with user and AI message bubbles
+- Professional medical guidance and recommendations
 
-### 6. Medicine Delivery (`medicine.png`)
-- Navigate to `http://localhost:3000/medicine`
-- Take a screenshot showing:
-  - Medicine catalog
-  - Prescription upload
-  - Delivery options
+### 4. Doctor Consultation Booking
+![Doctor Consultation](Screenshot%202025-06-22%20212033.png)
 
-## Screenshot Guidelines
+The consultation booking system includes:
+- List of available doctors with their specializations
+- Doctor profiles with ratings and availability status
+- Multiple consultation modes (Video, Audio, Chat)
+- Easy booking interface with time slot selection
+- Professional doctor cards with contact information
 
-### Technical Requirements
-- **Format**: PNG or JPG
-- **Resolution**: Minimum 1920x1080 for desktop views
-- **Quality**: High quality, clear and readable text
-- **Browser**: Use Chrome or Firefox for consistency
+### 5. Medicine Management
+![Medicine Management](Screenshot%202025-06-22%20212101.png)
 
-### Content Guidelines
-- Ensure all text is readable
-- Show the full interface without cropping important elements
-- Use the guest mode or create test accounts for screenshots
-- Capture the responsive design on different screen sizes if needed
+The medicine section provides:
+- Prescription upload functionality with OCR support
+- Medicine catalog with search capabilities
+- Alternative medicine suggestions
+- Delivery tracking and management
+- Integration with healthcare providers
 
-### File Naming Convention
-- Use lowercase with hyphens: `feature-name.png`
-- Be descriptive but concise
-- Match the names referenced in README.md
+## Key Features Demonstrated
 
-## How to Add Screenshots
+### 🔐 Authentication & Security
+- Role-based authentication (Patient/Doctor)
+- Secure login/signup process
+- Guest access option
+- Firebase authentication integration
 
-1. **Take Screenshots**:
-   - Use browser developer tools to set consistent viewport size
-   - Use screenshot tools like Lightshot, Snagit, or browser extensions
-   - Ensure good lighting and contrast
+### 🏥 Healthcare Services
+- **Symptom Checker**: AI-powered diagnosis using Google Gemini API
+- **Doctor Consultation**: Video/Audio/Chat consultations with verified doctors
+- **Medicine Management**: Prescription upload with OCR and delivery tracking
+- **Emergency Services**: Quick access to emergency healthcare
+- **Facility Finder**: Location-based healthcare facility search
 
-2. **Optimize Images**:
-   - Compress images to reduce file size (use tools like TinyPNG)
-   - Maintain quality while keeping files under 1MB each
+### 🎨 Design & User Experience
+- Modern gradient-based UI design
+- Responsive layout for all screen sizes
+- Smooth animations and transitions using Framer Motion
+- Intuitive navigation and user flow
+- Professional healthcare-focused color scheme
 
-3. **Add to Repository**:
-   - Place files in this `screenshots/` directory
-   - Update README.md if filenames change
-   - Commit with descriptive messages
+### 🚀 Technical Implementation
+- **Frontend**: Next.js 15 with TypeScript
+- **UI Components**: Radix UI + shadcn/ui + Tailwind CSS
+- **Authentication**: Firebase Auth
+- **Database**: Firebase Firestore
+- **AI Integration**: Google Gemini API for symptom checking
+- **Deployment**: Optimized for Vercel deployment
 
-## Alternative: Placeholder Images
+## Project Information
 
-If you cannot take screenshots immediately, you can:
+**Team**: DeepShip
+**Event**: HackStorm
+**Developers**: Omkarr Gondkar & Akhil Karampuri
+**Tech Stack**: Next.js, TypeScript, Firebase, Google AI, Tailwind CSS
 
-1. Create placeholder images with the correct dimensions
-2. Use design tools like Figma or Canva to create mockups
-3. Add actual screenshots later when the application is fully deployed
+## Usage in Documentation
 
-## Mobile Screenshots (Optional)
+These screenshots are used in the main project README.md to showcase the application's features and user interface. They demonstrate the complete user journey from authentication to accessing various healthcare services.
 
-Consider adding mobile screenshots for:
-- Responsive design demonstration
-- Mobile-specific features
-- Touch interface elements
+## File Information
 
-Place mobile screenshots in a `mobile/` subdirectory and reference them in the README.md if needed.
+- **Format**: PNG
+- **Timestamp**: June 22, 2025
+- **Resolution**: High-quality desktop screenshots
+- **Browser**: Captured using modern web browser
+- **Total Files**: 5 screenshots covering main application features
