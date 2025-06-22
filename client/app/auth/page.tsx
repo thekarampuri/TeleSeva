@@ -68,7 +68,7 @@ export default function AuthPage() {
   })
   const [role, setRole] = useState<'patient' | 'doctor'>('patient')
 
-  const { signup, login } = useAuth()
+  const { signup, login, setUserRole, setGuestMode } = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -84,8 +84,8 @@ export default function AuthPage() {
         toast.success('Account created successfully!')
       }
 
-      // Store user role in localStorage for role-based routing
-      localStorage.setItem("userRole", role)
+      // Store user role for role-based routing
+      setUserRole(role)
 
       // Redirect based on role
       if (role === 'doctor') {
@@ -101,7 +101,7 @@ export default function AuthPage() {
   }
 
   const handleGuestAccess = () => {
-    localStorage.setItem("userMode", "guest")
+    setGuestMode(true)
     router.push("/")
   }
 

@@ -276,8 +276,7 @@ export default function DoctorDashboard() {
   )
 
   return (
-    <ProtectedRoute>
-      <RoleBasedRoute allowedRoles={['doctor']}>
+    <ProtectedRoute requiredRole="doctor">
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       {/* Mobile Header */}
       <div className="lg:hidden flex items-center justify-between p-4 bg-white/80 backdrop-blur-sm border-b">
@@ -422,7 +421,6 @@ export default function DoctorDashboard() {
         )}
       </AnimatePresence>
         </div>
-      </RoleBasedRoute>
     </ProtectedRoute>
   )
 }

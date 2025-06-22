@@ -5,30 +5,58 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Heart } from 'lucide-react'
+import Cookies from 'js-cookie'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
+  requiredRole?: 'patient' | 'doctor' | null
 }
 
-export function ProtectedRoute({ children }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, requiredRole = null }: ProtectedRouteProps) {
   const { user, loading } = useAuth()
   const router = useRouter()
   const [isGuest, setIsGuest] = useState(false)
+  const [userRole, setUserRole] = useState<string | null>(null)
   const [isClient, setIsClient] = useState(false)
 
-  // Ensure we're on the client side before accessing localStorage
+  // Ensure we're on the client side before accessing localStorage and cookies
   useEffect(() => {
     setIsClient(true)
-    const userMode = localStorage.getItem("userMode")
-    setIsGuest(userMode === "guest")
+    
+    // Check both localStorage and cookies for user mode and role
+    const userModeFromStorage = localStorage.getItem("userMode")
+    const userModeFromCookie = Cookies.get("userMode")
+    
+    const userRoleFromStorage = localStorage.getItem("userRole")
+    const userRoleFromCookie = Cookies.get("userRole")
+    
+    // Prefer cookie values over localStorage for better security
+    setIsGuest(userModeFromCookie === "guest" || userModeFromStorage === "guest")
+    setUserRole(userRoleFromCookie || userRoleFromStorage)
   }, [])
 
   useEffect(() => {
     // Only redirect if we're on the client and not loading
-    if (isClient && !loading && !user && !isGuest) {
-      router.push('/auth')
+    if (isClient && !loading) {
+      // If no user and not guest, redirect to auth
+      if (!user && !isGuest) {
+        router.push('/auth')
+        return
+      }
+      
+      // If requiredRole is specified, check if user has that role
+      if (requiredRole && userRole !== requiredRole) {
+        // Redirect based on actual role
+        if (userRole === 'doctor') {
+          router.push('/doctor-dashboard')
+        } else if (userRole === 'patient' || isGuest) {
+          router.push('/')
+        } else {
+          router.push('/auth')
+        }
+      }
     }
-  }, [user, loading, router, isGuest, isClient])
+  }, [user, loading, router, isGuest, isClient, userRole, requiredRole])
 
   // Show loading screen while Firebase is initializing or while checking client state
   if (loading || !isClient) {
@@ -56,8 +84,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     )
   }
 
-  // If no user and not guest, return null (will redirect)
-  if (!user && !isGuest) {
+  // If no user and not guest, or if role requirement not met, return null (will redirect)
+  if ((!user && !isGuest) || (requiredRole && userRole !== requiredRole)) {
     return null
   }
 

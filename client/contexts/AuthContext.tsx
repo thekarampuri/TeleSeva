@@ -11,6 +11,7 @@ import {
   updateProfile
 } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
+import Cookies from 'js-cookie'
 
 interface AuthContextType {
   user: User | null
@@ -18,6 +19,8 @@ interface AuthContextType {
   signup: (email: string, password: string, name: string) => Promise<void>
   login: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
+  setUserRole: (role: 'patient' | 'doctor') => void
+  setGuestMode: (isGuest: boolean) => void
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType)
@@ -35,13 +38,42 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
+  // Set user role in both localStorage and cookies
+  function setUserRole(role: 'patient' | 'doctor') {
+    localStorage.setItem("userRole", role)
+    Cookies.set("userRole", role, { expires: 7 }) // Expires in 7 days
+  }
+
+  // Set guest mode in both localStorage and cookies
+  function setGuestMode(isGuest: boolean) {
+    if (isGuest) {
+      localStorage.setItem("userMode", "guest")
+      Cookies.set("userMode", "guest", { expires: 1 }) // Expires in 1 day
+    } else {
+      localStorage.removeItem("userMode")
+      Cookies.remove("userMode")
+    }
+  }
+
   async function signup(email: string, password: string, name: string) {
     const { user } = await createUserWithEmailAndPassword(auth, email, password)
     await updateProfile(user, { displayName: name })
+    
+    // Set auth token in cookies
+    if (user.refreshToken) {
+      Cookies.set("authToken", user.refreshToken, { expires: 7 })
+    }
   }
 
-  function login(email: string, password: string) {
-    return signInWithEmailAndPassword(auth, email, password)
+  async function login(email: string, password: string) {
+    const result = await signInWithEmailAndPassword(auth, email, password)
+    
+    // Set auth token in cookies
+    if (result.user.refreshToken) {
+      Cookies.set("authToken", result.user.refreshToken, { expires: 7 })
+    }
+    
+    return result
   }
 
   async function logout() {
@@ -50,6 +82,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Clear any stored user data
       localStorage.removeItem("userMode")
       localStorage.removeItem("userRole")
+      
+      // Clear cookies
+      Cookies.remove("authToken")
+      Cookies.remove("userRole")
+      Cookies.remove("userMode")
+      
       // Redirect to auth page
       router.push('/auth')
     } catch (error) {
@@ -60,6 +98,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user)
+      
+      // Set or remove auth token cookie based on user state
+      if (user?.refreshToken) {
+        Cookies.set("authToken", user.refreshToken, { expires: 7 })
+      } else {
+        Cookies.remove("authToken")
+      }
+      
       setLoading(false)
     })
 
@@ -71,7 +117,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     loading,
     signup,
     login,
-    logout
+    logout,
+    setUserRole,
+    setGuestMode
   }
 
   return (

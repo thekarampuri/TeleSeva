@@ -144,7 +144,7 @@ export default function HomePage() {
   }))
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requiredRole="patient">
       <MainLayout>
           <motion.div
             className="p-6 space-y-12"
