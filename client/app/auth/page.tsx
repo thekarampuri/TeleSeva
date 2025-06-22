@@ -118,7 +118,7 @@ export default function AuthPage() {
 
   const handleGuestAccess = () => {
     setGuestMode(true)
-    router.push("/")
+    router.push("/landing-page")
   }
 
   const features = [
