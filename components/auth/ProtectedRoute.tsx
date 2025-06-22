@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Heart } from 'lucide-react'
 
@@ -13,17 +13,25 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading } = useAuth()
   const router = useRouter()
+  const [isGuest, setIsGuest] = useState(false)
+  const [isClient, setIsClient] = useState(false)
+
+  // Ensure we're on the client side before accessing localStorage
+  useEffect(() => {
+    setIsClient(true)
+    const userMode = localStorage.getItem("userMode")
+    setIsGuest(userMode === "guest")
+  }, [])
 
   useEffect(() => {
-    // Check if user is in guest mode
-    const isGuest = localStorage.getItem("userMode") === "guest"
-    
-    if (!loading && !user && !isGuest) {
+    // Only redirect if we're on the client and not loading
+    if (isClient && !loading && !user && !isGuest) {
       router.push('/auth')
     }
-  }, [user, loading, router])
+  }, [user, loading, router, isGuest, isClient])
 
-  if (loading) {
+  // Show loading screen while Firebase is initializing or while checking client state
+  if (loading || !isClient) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center">
         <motion.div
@@ -48,11 +56,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     )
   }
 
-  // Check if user is in guest mode
-  const isGuest = localStorage.getItem("userMode") === "guest"
-  
+  // If no user and not guest, return null (will redirect)
   if (!user && !isGuest) {
-    return null // Will redirect to auth page
+    return null
   }
 
   return <>{children}</>
