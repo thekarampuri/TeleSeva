@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useAuth } from '@/contexts/AuthContext'
+// import { useAuth } from '@/contexts/AuthContext' // DISABLED TO FIX INFINITE LOOP
 import { useRouter } from 'next/navigation'
 import {
   Heart,
@@ -68,8 +68,15 @@ export default function AuthPage() {
   })
   const [role, setRole] = useState<'patient' | 'doctor'>('patient')
 
-  const { signup, login, setUserRole, setGuestMode, redirectToRoleDashboard } = useAuth()
+  // const { signup, login, setUserRole, setGuestMode, redirectToRoleDashboard } = useAuth() // DISABLED
   const router = useRouter()
+
+  // TEMPORARY PLACEHOLDER FUNCTIONS
+  const signup = async () => { console.log('Signup disabled') }
+  const login = async () => { console.log('Login disabled'); return { role: null } }
+  const setUserRole = () => {}
+  const setGuestMode = () => {}
+  const redirectToRoleDashboard = () => {}
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -83,15 +90,15 @@ export default function AuthPage() {
         const { role: userRole } = await login(formData.email, formData.password)
         console.log(`Login successful, user role from Firestore: ${userRole || 'null'}`);
 
-        // Set the selected role in the auth context to ensure proper redirection
-        setUserRole(role)
-        console.log(`Set user role in context: ${role}`);
+        // Use the actual user role from Firestore, not the form selection
+        const actualRole = userRole || role // Fallback to form selection if no role in Firestore
+        console.log(`Using actual user role: ${actualRole}`);
 
         toast.success('Welcome back!')
 
         // Use a small delay to ensure cookies are set before redirect
         setTimeout(() => {
-          redirectToRoleDashboard(role)
+          redirectToRoleDashboard(actualRole)
         }, 100)
 
       } else {

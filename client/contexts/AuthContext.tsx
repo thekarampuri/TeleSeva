@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import React, { createContext, useContext, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   User,
@@ -32,196 +32,79 @@ export function useAuth() {
   return useContext(AuthContext)
 }
 
-interface AuthProviderProps {
-  children: React.ReactNode
-}
-
-export function AuthProvider({ children }: AuthProviderProps) {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [userRole, setUserRoleState] = useState<'doctor' | 'patient' | null>(null)
   const [loading, setLoading] = useState(true)
-  const [isInitialized, setIsInitialized] = useState(false)
   const router = useRouter()
 
-  // Set user role in both localStorage and cookies
-  const setUserRole = useCallback((role: 'patient' | 'doctor') => {
-    console.log(`Setting user role: ${role}`);
+  function setUserRole(role: 'patient' | 'doctor') {
     localStorage.setItem("userRole", role)
-    Cookies.set("userRole", role, { expires: 7 }) // Expires in 7 days
+    Cookies.set("userRole", role, { expires: 7 })
     setUserRoleState(role)
-    console.log(`User role set in localStorage, cookies, and state: ${role}`);
-  }, [])
+  }
 
-  // Set guest mode in both localStorage and cookies
-  const setGuestMode = useCallback((isGuest: boolean) => {
+  function setGuestMode(isGuest: boolean) {
     if (isGuest) {
       localStorage.setItem("userMode", "guest")
-      Cookies.set("userMode", "guest", { expires: 1 }) // Expires in 1 day
+      Cookies.set("userMode", "guest", { expires: 1 })
     } else {
       localStorage.removeItem("userMode")
       Cookies.remove("userMode")
     }
-  }, [])
+  }
 
-  // Redirect to appropriate dashboard based on role
-  const redirectToRoleDashboard = useCallback((role: 'patient' | 'doctor') => {
-    console.log(`Redirecting to dashboard for role: ${role}`);
-
-    // Use window.location.href for a full page redirect to avoid middleware conflicts
+  function redirectToRoleDashboard(role: 'patient' | 'doctor') {
     if (role === 'doctor') {
-      console.log('Redirecting to doctor dashboard');
       window.location.href = '/doctor-dashboard'
     } else {
-      console.log('Redirecting to patient dashboard');
       window.location.href = '/dashboard'
     }
-  }, [])
+  }
 
-  const signup = useCallback(async (email: string, password: string, name: string, role: 'doctor' | 'patient') => {
-    console.log(`Signing up user with email: ${email}, name: ${name}, role: ${role}`);
-
-    // Create the user in Firebase Auth
-    const { user } = await createUserWithEmailAndPassword(auth, email, password)
-    console.log(`User created with UID: ${user.uid}`);
-
-    // Update the user profile with the name
-    await updateProfile(user, { displayName: name })
-    console.log(`User profile updated with name: ${name}`);
-
-    // Save the user role in Firestore
-    await saveUserRole(user.uid, role, {
+  async function signup(email: string, password: string, name: string, role: 'doctor' | 'patient') {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+    await updateProfile(userCredential.user, { displayName: name })
+    
+    await saveUserRole(userCredential.user.uid, role, {
       email,
       name,
       createdAt: new Date(),
     })
-    console.log(`User role saved in Firestore: ${role}`);
-
-    // Set the user role in state, localStorage, and cookies
+    
     setUserRole(role)
-    console.log(`User role set in state, localStorage, and cookies: ${role}`);
+  }
 
-    // Set auth token in cookies
-    if (user.refreshToken) {
-      Cookies.set("authToken", user.refreshToken, { expires: 7 })
-      console.log(`Auth token set in cookies`);
-    }
-  }, [setUserRole])
-
-  const login = useCallback(async (email: string, password: string) => {
-    console.log(`Logging in user with email: ${email}`);
-
-    // Sign in the user with Firebase Auth
-    const result = await signInWithEmailAndPassword(auth, email, password)
-    console.log(`User logged in with UID: ${result.user.uid}`);
-
-    // Get the user role from Firestore
-    const role = await getUserRole(result.user.uid)
-    console.log(`Retrieved user role from Firestore: ${role || 'null'}`);
-
-    // Set the user role in state, localStorage, and cookies
+  async function login(email: string, password: string) {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password)
+    const role = await getUserRole(userCredential.user.uid)
+    
     if (role) {
       setUserRole(role)
-      console.log(`User role set in state, localStorage, and cookies: ${role}`);
-    } else {
-      console.log(`No role found for user ${result.user.uid} in Firestore`);
     }
-
-    // Set auth token in cookies
-    if (result.user.refreshToken) {
-      Cookies.set("authToken", result.user.refreshToken, { expires: 7 })
-      console.log(`Auth token set in cookies`);
-    }
-
+    
     return { role }
-  }, [setUserRole])
+  }
 
-  const logout = useCallback(async () => {
+  async function logout() {
     try {
       await signOut(auth)
-      // Clear any stored user data
       localStorage.removeItem("userMode")
       localStorage.removeItem("userRole")
-
-      // Clear cookies
       Cookies.remove("authToken")
       Cookies.remove("userRole")
       Cookies.remove("userMode")
-
-      // Clear state
       setUserRoleState(null)
-
-      // Redirect to landing page
       router.push('/landing-page')
     } catch (error) {
       console.error('Logout error:', error)
     }
-  }, [router])
+  }
 
-  // Initialize user role from localStorage/cookies on mount
+  // MINIMAL useEffect - only handle auth state
   useEffect(() => {
-    const roleFromStorage = localStorage.getItem("userRole") as 'doctor' | 'patient' | null
-    const roleFromCookie = Cookies.get("userRole") as 'doctor' | 'patient' | null
-    const role = roleFromCookie || roleFromStorage
-
-    if (role) {
-      setUserRoleState(role)
-    }
-
-    setIsInitialized(true)
-  }, [])
-
-  // Check user role when user changes (only once per user)
-  useEffect(() => {
-    let isMounted = true
-
-    async function checkRole() {
-      if (user && isInitialized && !userRole) {
-        try {
-          console.log(`Checking role for user: ${user.uid}`)
-          const role = await getUserRole(user.uid)
-
-          if (isMounted) {
-            if (role) {
-              console.log(`Found role in Firestore: ${role}`)
-              localStorage.setItem("userRole", role)
-              Cookies.set("userRole", role, { expires: 7 })
-              setUserRoleState(role)
-            } else {
-              console.log(`No role found in Firestore for user: ${user.uid}`)
-            }
-          }
-        } catch (error) {
-          console.error('Error checking user role:', error)
-        }
-      }
-    }
-
-    if (user && isInitialized && !userRole) {
-      checkRole()
-    }
-
-    return () => {
-      isMounted = false
-    }
-  }, [user?.uid, isInitialized]) // Removed userRole from dependencies to prevent infinite loop
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      console.log('Auth state changed:', firebaseUser?.uid || 'null')
-
-      setUser(firebaseUser)
-
-      // Set or remove auth token cookie based on user state
-      if (firebaseUser?.refreshToken) {
-        Cookies.set("authToken", firebaseUser.refreshToken, { expires: 7 })
-      } else {
-        // User logged out - clear everything
-        Cookies.remove("authToken")
-        Cookies.remove("userRole")
-        localStorage.removeItem("userRole")
-        setUserRoleState(null)
-      }
-
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user)
       setLoading(false)
     })
 

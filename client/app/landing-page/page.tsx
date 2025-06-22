@@ -5,11 +5,11 @@ import Spline from "@splinetool/react-spline"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ArrowDown, Video, BrainCircuit, Pill, Ambulance, MapPin, BarChart2, UserCheck } from "lucide-react"
+import { ArrowDown, Video, BrainCircuit, Pill, Ambulance, MapPin, BarChart2, LogIn, UserPlus } from "lucide-react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { Navbar } from "../../components/navbar"
-import { useAuth } from "@/contexts/AuthContext"
+// import { useAuth } from "@/contexts/AuthContext" // DISABLED TO FIX INFINITE LOOP
 
 const pageVariants = {
   initial: { opacity: 0 },
@@ -82,7 +82,8 @@ const developers = [
 ]
 
 export default function LandingPage() {
-  const { user } = useAuth();
+  // const { user } = useAuth(); // DISABLED TO FIX INFINITE LOOP
+  const user = null; // TEMPORARY FIX
   const [splineError, setSplineError] = useState(false);
   
   const handleSplineError = () => {
@@ -254,15 +255,26 @@ export default function LandingPage() {
             <motion.p variants={itemVariants} className="max-w-2xl mx-auto mb-8 text-blue-100">
               Join thousands of users who have already discovered the convenience and quality of our healthcare platform.
             </motion.p>
-            <motion.div variants={itemVariants} className="flex justify-center">
+            <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
                 size="lg"
                 asChild
-                className="bg-white text-blue-600 hover:bg-blue-50 shadow-lg transform hover:scale-105 transition-all px-8 py-4"
+                className="bg-white text-blue-600 hover:bg-blue-50 shadow-lg transform hover:scale-105 transition-all"
               >
                 <Link href="/auth">
-                  <UserCheck className="mr-2 h-5 w-5" />
-                  Signup / Login
+                  <UserPlus className="mr-2 h-5 w-5" />
+                  Create Account
+                </Link>
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                asChild
+                className="border-2 border-white hover:bg-white/10 shadow-lg transform hover:scale-105 transition-all"
+              >
+                <Link href="/auth">
+                  <LogIn className="mr-2 h-5 w-5" />
+                  Sign In
                 </Link>
               </Button>
             </motion.div>

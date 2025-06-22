@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { doctorAvailabilityService } from '@/lib/firebase/doctor-availability'
 import { DoctorProfile } from '@/lib/firebase/types'
-import { useAuth } from '@/lib/firebase/auth.tsx'
+import { useAuth } from '@/contexts/AuthContext'
 import { DoctorSeeder } from '@/lib/utils/doctor-seeder'
 import { Wifi, WifiOff, Users, RefreshCw, Plus, Trash2 } from 'lucide-react'
 
@@ -16,7 +16,7 @@ export function DoctorAvailabilityDebug() {
   const [refreshing, setRefreshing] = useState(false)
   const [seeding, setSeeding] = useState(false)
   const [removing, setRemoving] = useState(false)
-  const { user, userProfile } = useAuth()
+  const { user, userRole } = useAuth()
 
   useEffect(() => {
     const unsubscribe = doctorAvailabilityService.subscribeToAvailableDoctors((doctors) => {
@@ -40,7 +40,7 @@ export function DoctorAvailabilityDebug() {
   }
 
   const handleToggleOnlineStatus = async () => {
-    if (!user || userProfile?.role !== 'doctor') return
+    if (!user || userRole !== 'doctor') return
 
     try {
       const currentDoctor = availableDoctors.find(d => d.uid === user.uid)
@@ -116,7 +116,7 @@ export function DoctorAvailabilityDebug() {
               <Trash2 className={`h-4 w-4 mr-1 ${removing ? 'animate-spin' : ''}`} />
               {removing ? 'Removing...' : 'Remove Sample Doctors'}
             </Button>
-            {userProfile?.role === 'doctor' && (
+            {userRole === 'doctor' && (
               <Button
                 variant="outline"
                 size="sm"

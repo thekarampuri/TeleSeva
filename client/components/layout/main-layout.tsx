@@ -90,19 +90,12 @@ export function MainLayout({ children }: MainLayoutProps) {
   const router = useRouter()
   const { user, logout } = useAuth()
 
-  // Check if user is in guest mode and handle role-based redirection
+  // ULTRA SIMPLE - No redirects, just set guest mode
   useEffect(() => {
     const userMode = localStorage.getItem("userMode")
-    const userRole = localStorage.getItem("userRole")
-
     setIsGuest(userMode === "guest")
     setMounted(true)
-
-    // If user is logged in and is a doctor, redirect to doctor dashboard
-    if (user && userRole === "doctor" && pathname !== "/doctor-dashboard") {
-      router.push("/doctor-dashboard")
-    }
-  }, [user, pathname, router])
+  }, [])
 
   // Add guest banner after the mobile header
   const guestBanner = isGuest && (

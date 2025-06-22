@@ -18,7 +18,7 @@ const consultationModes = [
   { id: "chat", label: "Chat", icon: MessageCircle, price: "₹99" },
 ]
 
-export default function ConsultationPage() {
+function ConsultationPageContent() {
   const [selectedMode, setSelectedMode] = useState<"video" | "audio" | "chat">("video")
   const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null)
   const [availableDoctors, setAvailableDoctors] = useState<DoctorProfile[]>([])
@@ -330,4 +330,29 @@ export default function ConsultationPage() {
       </div>
     </MainLayout>
   )
+}
+
+export default function ConsultationPage() {
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  if (!isClient) {
+    return (
+      <MainLayout>
+        <div className="p-6 space-y-8">
+          <div className="text-center space-y-4">
+            <h1 className="text-3xl font-bold text-gray-900">Doctor Consultation</h1>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Loading...
+            </p>
+          </div>
+        </div>
+      </MainLayout>
+    )
+  }
+
+  return <ConsultationPageContent />
 }
