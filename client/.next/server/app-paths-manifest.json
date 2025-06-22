@@ -1,6 +1,8 @@
 {
   "/page": "app/page.js",
-  "/consultation/page": "app/consultation/page.js",
   "/reports/page": "app/reports/page.js",
+  "/symptom-checker/page": "app/symptom-checker/page.js",
+  "/consultation/page": "app/consultation/page.js",
+  "/medicine/page": "app/medicine/page.js",
   "/notifications/page": "app/notifications/page.js"
 }

@@ -25,6 +25,16 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/reports/page.js"
+    ],
+    "/symptom-checker/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/symptom-checker/page.js"
+    ],
+    "/medicine/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/medicine/page.js"
     ]
   }
 }
