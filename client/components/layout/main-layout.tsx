@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/AuthContext"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 import {
   Home,
   Stethoscope,
@@ -90,14 +91,22 @@ export function MainLayout({ children }: MainLayoutProps) {
   const [isGuest, setIsGuest] = useState(false)
   const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
   const { user, logout } = useAuth()
 
-  // Check if user is in guest mode
+  // Check if user is in guest mode and handle role-based redirection
   useEffect(() => {
     const userMode = localStorage.getItem("userMode")
+    const userRole = localStorage.getItem("userRole")
+
     setIsGuest(userMode === "guest")
     setMounted(true)
-  }, [])
+
+    // If user is logged in and is a doctor, redirect to doctor dashboard
+    if (user && userRole === "doctor" && pathname !== "/doctor-dashboard") {
+      router.push("/doctor-dashboard")
+    }
+  }, [user, pathname, router])
 
   // Add guest banner after the mobile header
   const guestBanner = isGuest && (

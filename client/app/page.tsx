@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { MainLayout } from "@/components/layout/main-layout"
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
+import { RoleBasedRoute } from "@/components/auth/RoleBasedRoute"
 import {
   Stethoscope,
   Bot,
@@ -145,14 +146,14 @@ export default function HomePage() {
   return (
     <ProtectedRoute>
       <MainLayout>
-      <motion.div 
-        className="p-6 space-y-12"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        {/* Hero Section */}
-        <motion.div variants={itemVariants} className="text-center space-y-6 py-12">
+          <motion.div
+            className="p-6 space-y-12"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {/* Hero Section */}
+            <motion.div variants={itemVariants} className="text-center space-y-6 py-12">
           <motion.div
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -202,13 +203,13 @@ export default function HomePage() {
               Learn More
             </Button>
           </motion.div>
-        </motion.div>
+            </motion.div>
 
-        {/* Quick Stats */}
-        <motion.div
-          variants={itemVariants}
-          className="grid grid-cols-1 md:grid-cols-3 gap-8"
-        >
+            {/* Quick Stats */}
+            <motion.div
+              variants={itemVariants}
+              className="grid grid-cols-1 md:grid-cols-3 gap-8"
+            >
           <motion.div
             variants={cardVariants}
             whileHover={{ scale: 1.05, y: -5 }}
@@ -271,10 +272,10 @@ export default function HomePage() {
               </CardContent>
             </Card>
           </motion.div>
-        </motion.div>
+            </motion.div>
 
-        {/* Quick Actions Grid */}
-        <motion.div variants={itemVariants}>
+            {/* Quick Actions Grid */}
+            <motion.div variants={itemVariants}>
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Our Services</h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
@@ -329,10 +330,10 @@ export default function HomePage() {
                 </Card>
               </motion.div>
             ))}
-          </div>
+            </div>
+            </motion.div>
         </motion.div>
-      </motion.div>
-    </MainLayout>
+      </MainLayout>
     </ProtectedRoute>
   )
 }

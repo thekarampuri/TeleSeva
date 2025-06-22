@@ -83,8 +83,13 @@ export default function AuthPage() {
         await signup(formData.email, formData.password, formData.name)
         toast.success('Account created successfully!')
       }
+
+      // Store user role in localStorage for role-based routing
+      localStorage.setItem("userRole", role)
+
+      // Redirect based on role
       if (role === 'doctor') {
-        router.push('/doctor-empty')
+        router.push('/doctor-dashboard')
       } else {
         router.push('/')
       }

@@ -47,8 +47,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   async function logout() {
     try {
       await signOut(auth)
-      // Clear any guest mode data
+      // Clear any stored user data
       localStorage.removeItem("userMode")
+      localStorage.removeItem("userRole")
       // Redirect to auth page
       router.push('/auth')
     } catch (error) {
