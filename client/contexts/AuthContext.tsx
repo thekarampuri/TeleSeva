@@ -72,7 +72,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       window.location.href = '/doctor-dashboard'
     } else {
       console.log('Redirecting to patient dashboard');
-      window.location.href = '/'
+      window.location.href = '/dashboard'
     }
   }
 
