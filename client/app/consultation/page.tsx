@@ -7,15 +7,234 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Video, Mic, MessageCircle, Star, Clock, Users, Shuffle, UserPlus, Calendar, Wifi, AlertCircle } from "lucide-react"
-import { doctorAvailabilityService } from "@/lib/firebase/doctor-availability"
-import { consultationBookingService } from "@/lib/firebase/consultation-booking"
+
 import { DoctorProfile } from "@/lib/firebase/types"
-import { useAuth } from "@/lib/firebase/auth.tsx"
+import { useAuth } from "@/contexts/AuthContext"
 
 const consultationModes = [
   { id: "video", label: "Video Call", icon: Video, price: "₹299" },
   { id: "audio", label: "Audio Call", icon: Mic, price: "₹199" },
   { id: "chat", label: "Chat", icon: MessageCircle, price: "₹99" },
+]
+
+// Mock data for Indian doctors
+const mockDoctors: DoctorProfile[] = [
+  {
+    uid: "doctor-1",
+    email: "dr.sharma@teleseva.com",
+    displayName: "Dr. Rajesh Sharma",
+    role: "doctor",
+    phoneNumber: "+91-9876543210",
+    profilePicture: "/placeholder.svg",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    specialization: "Cardiology",
+    qualification: ["MBBS", "MD Cardiology", "DM Interventional Cardiology"],
+    experience: 15,
+    licenseNumber: "MH12345",
+    consultationFee: 800,
+    languages: ["English", "Hindi", "Marathi"],
+    availability: {
+      isOnline: true,
+      lastSeen: new Date(),
+      workingHours: {
+        monday: { start: "09:00", end: "17:00", isAvailable: true },
+        tuesday: { start: "09:00", end: "17:00", isAvailable: true },
+        wednesday: { start: "09:00", end: "17:00", isAvailable: true },
+        thursday: { start: "09:00", end: "17:00", isAvailable: true },
+        friday: { start: "09:00", end: "17:00", isAvailable: true },
+      },
+    },
+    rating: {
+      average: 4.8,
+      totalReviews: 156,
+    },
+    hospital: {
+      name: "Apollo Hospital Mumbai",
+      address: "Sahar Road, Andheri East, Mumbai",
+      phone: "+91-22-6767-4444",
+    },
+  },
+  {
+    uid: "doctor-2",
+    email: "dr.priya@teleseva.com",
+    displayName: "Dr. Priya Patel",
+    role: "doctor",
+    phoneNumber: "+91-9876543211",
+    profilePicture: "/placeholder.svg",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    specialization: "Pediatrics",
+    qualification: ["MBBS", "MD Pediatrics"],
+    experience: 12,
+    licenseNumber: "GJ67890",
+    consultationFee: 600,
+    languages: ["English", "Hindi", "Gujarati"],
+    availability: {
+      isOnline: true,
+      lastSeen: new Date(),
+      workingHours: {
+        monday: { start: "10:00", end: "18:00", isAvailable: true },
+        tuesday: { start: "10:00", end: "18:00", isAvailable: true },
+        wednesday: { start: "10:00", end: "18:00", isAvailable: true },
+        thursday: { start: "10:00", end: "18:00", isAvailable: true },
+        friday: { start: "10:00", end: "18:00", isAvailable: true },
+      },
+    },
+    rating: {
+      average: 4.9,
+      totalReviews: 203,
+    },
+    hospital: {
+      name: "Fortis Hospital Ahmedabad",
+      address: "Vasna-Bhayli Road, Vadodara",
+      phone: "+91-265-6681-800",
+    },
+  },
+  {
+    uid: "doctor-3",
+    email: "dr.kumar@teleseva.com",
+    displayName: "Dr. Anil Kumar",
+    role: "doctor",
+    phoneNumber: "+91-9876543212",
+    profilePicture: "/placeholder.svg",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    specialization: "General Medicine",
+    qualification: ["MBBS", "MD Internal Medicine"],
+    experience: 8,
+    licenseNumber: "DL11223",
+    consultationFee: 500,
+    languages: ["English", "Hindi", "Punjabi"],
+    availability: {
+      isOnline: true,
+      lastSeen: new Date(),
+      workingHours: {
+        monday: { start: "08:00", end: "16:00", isAvailable: true },
+        tuesday: { start: "08:00", end: "16:00", isAvailable: true },
+        wednesday: { start: "08:00", end: "16:00", isAvailable: true },
+        thursday: { start: "08:00", end: "16:00", isAvailable: true },
+        friday: { start: "08:00", end: "16:00", isAvailable: true },
+      },
+    },
+    rating: {
+      average: 4.6,
+      totalReviews: 89,
+    },
+    hospital: {
+      name: "Max Super Speciality Hospital Delhi",
+      address: "Press Enclave Road, Saket, New Delhi",
+      phone: "+91-11-2651-5050",
+    },
+  },
+  {
+    uid: "doctor-4",
+    email: "dr.meera@teleseva.com",
+    displayName: "Dr. Meera Reddy",
+    role: "doctor",
+    phoneNumber: "+91-9876543213",
+    profilePicture: "/placeholder.svg",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    specialization: "Dermatology",
+    qualification: ["MBBS", "MD Dermatology", "Fellowship in Cosmetic Dermatology"],
+    experience: 10,
+    licenseNumber: "AP33445",
+    consultationFee: 700,
+    languages: ["English", "Hindi", "Telugu", "Tamil"],
+    availability: {
+      isOnline: true,
+      lastSeen: new Date(),
+      workingHours: {
+        monday: { start: "11:00", end: "19:00", isAvailable: true },
+        tuesday: { start: "11:00", end: "19:00", isAvailable: true },
+        wednesday: { start: "11:00", end: "19:00", isAvailable: true },
+        thursday: { start: "11:00", end: "19:00", isAvailable: true },
+        friday: { start: "11:00", end: "19:00", isAvailable: true },
+      },
+    },
+    rating: {
+      average: 4.7,
+      totalReviews: 134,
+    },
+    hospital: {
+      name: "KIMS Hospital Hyderabad",
+      address: "Minister Road, Secunderabad",
+      phone: "+91-40-4488-5555",
+    },
+  },
+  {
+    uid: "doctor-5",
+    email: "dr.singh@teleseva.com",
+    displayName: "Dr. Vikram Singh",
+    role: "doctor",
+    phoneNumber: "+91-9876543214",
+    profilePicture: "/placeholder.svg",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    specialization: "Orthopedics",
+    qualification: ["MBBS", "MS Orthopedics", "Fellowship in Joint Replacement"],
+    experience: 18,
+    licenseNumber: "RJ55667",
+    consultationFee: 900,
+    languages: ["English", "Hindi", "Rajasthani"],
+    availability: {
+      isOnline: true,
+      lastSeen: new Date(),
+      workingHours: {
+        monday: { start: "09:00", end: "17:00", isAvailable: true },
+        tuesday: { start: "09:00", end: "17:00", isAvailable: true },
+        wednesday: { start: "09:00", end: "17:00", isAvailable: true },
+        thursday: { start: "09:00", end: "17:00", isAvailable: true },
+        friday: { start: "09:00", end: "17:00", isAvailable: true },
+      },
+    },
+    rating: {
+      average: 4.9,
+      totalReviews: 278,
+    },
+    hospital: {
+      name: "Fortis Escorts Hospital Jaipur",
+      address: "Jawahar Lal Nehru Marg, Malviya Nagar, Jaipur",
+      phone: "+91-141-254-7000",
+    },
+  },
+  {
+    uid: "doctor-6",
+    email: "dr.nair@teleseva.com",
+    displayName: "Dr. Lakshmi Nair",
+    role: "doctor",
+    phoneNumber: "+91-9876543215",
+    profilePicture: "/placeholder.svg",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    specialization: "Gynecology",
+    qualification: ["MBBS", "MD Obstetrics & Gynecology", "Fellowship in Laparoscopy"],
+    experience: 14,
+    licenseNumber: "KL77889",
+    consultationFee: 750,
+    languages: ["English", "Hindi", "Malayalam", "Tamil"],
+    availability: {
+      isOnline: true,
+      lastSeen: new Date(),
+      workingHours: {
+        monday: { start: "10:00", end: "18:00", isAvailable: true },
+        tuesday: { start: "10:00", end: "18:00", isAvailable: true },
+        wednesday: { start: "10:00", end: "18:00", isAvailable: true },
+        thursday: { start: "10:00", end: "18:00", isAvailable: true },
+        friday: { start: "10:00", end: "18:00", isAvailable: true },
+      },
+    },
+    rating: {
+      average: 4.8,
+      totalReviews: 192,
+    },
+    hospital: {
+      name: "Aster Medcity Kochi",
+      address: "Kuttisahib Road, Cheranelloor, Kochi",
+      phone: "+91-484-6699-999",
+    },
+  },
 ]
 
 function ConsultationPageContent() {
@@ -27,20 +246,21 @@ function ConsultationPageContent() {
   const [booking, setBooking] = useState(false)
   const { user } = useAuth()
 
-  // Load available doctors
+  // Load available doctors (using mock data)
   useEffect(() => {
-    const unsubscribe = doctorAvailabilityService.subscribeToAvailableDoctors((doctors) => {
-      setAvailableDoctors(doctors)
+    // Simulate loading delay
+    const timer = setTimeout(() => {
+      setAvailableDoctors(mockDoctors)
       setLoading(false)
-    })
+    }, 1000)
 
-    return unsubscribe
+    return () => clearTimeout(timer)
   }, [])
 
-  // Handle booking consultation
+  // Handle booking consultation (mock implementation)
   const handleBookConsultation = async () => {
-    if (!selectedDoctor || !user) {
-      setError('Please select a doctor and ensure you are logged in')
+    if (!selectedDoctor) {
+      setError('Please select a doctor')
       return
     }
 
@@ -48,24 +268,17 @@ function ConsultationPageContent() {
     setError(null)
 
     try {
-      const appointmentDate = new Date()
-      appointmentDate.setHours(appointmentDate.getHours() + 1) // Book for 1 hour from now
+      // Simulate booking process
+      await new Promise(resolve => setTimeout(resolve, 2000))
 
-      const appointmentId = await consultationBookingService.bookConsultation({
-        doctorId: selectedDoctor,
-        patientId: user.uid,
-        appointmentDate,
-        appointmentTime: appointmentDate.toTimeString().slice(0, 5),
-        type: selectedMode,
-        symptoms: '', // Could be collected from a form
-        notes: `Consultation booked via ${selectedMode} mode`,
-      })
+      const selectedDoctorData = availableDoctors.find(d => d.uid === selectedDoctor)
+      const appointmentId = `APPT-${Date.now()}`
 
-      alert(`Consultation booked successfully! Appointment ID: ${appointmentId}`)
+      alert(`Consultation booked successfully!\n\nAppointment ID: ${appointmentId}\nDoctor: ${selectedDoctorData?.displayName}\nMode: ${selectedMode}\nFee: ₹${selectedDoctorData?.consultationFee}`)
       setSelectedDoctor(null)
     } catch (error) {
       console.error('Error booking consultation:', error)
-      setError(error instanceof Error ? error.message : 'Failed to book consultation')
+      setError('Failed to book consultation. Please try again.')
     } finally {
       setBooking(false)
     }
@@ -309,15 +522,13 @@ function ConsultationPageContent() {
                     size="lg"
                     className="bg-white text-blue-600 hover:bg-blue-50 mt-2"
                     onClick={handleBookConsultation}
-                    disabled={booking || !user}
+                    disabled={booking}
                   >
                     {booking ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
                         Booking...
                       </>
-                    ) : !user ? (
-                      'Login Required'
                     ) : (
                       'Book Consultation'
                     )}

@@ -20,9 +20,9 @@ export function middleware(request: NextRequest) {
   // Debug logging
   console.log(`Middleware - Path: ${path}, Token: ${!!token}, Role: ${userRole}, Guest: ${isGuest}`)
 
-  // If the path is exactly '/', redirect to landing page
+  // If the path is exactly '/', redirect to auth page
   if (path === '/') {
-    return NextResponse.redirect(new URL('/landing-page', request.url))
+    return NextResponse.redirect(new URL('/auth', request.url))
   }
 
   // If the path is '/dashboard' (patient dashboard) and no token exists, redirect to login
@@ -31,15 +31,15 @@ export function middleware(request: NextRequest) {
   }
 
   // If user is authenticated and tries to access auth page, redirect based on role
-  if (path === '/auth' && token) {
-    // Only redirect if we have a clear role, otherwise let them stay on auth page
-    // This prevents redirect loops when role is being set
+  if (path === '/auth' && token && userRole) {
+    // Only redirect if we have both token and role to prevent redirect loops
     if (userRole === 'doctor') {
+      console.log('Redirecting authenticated doctor to doctor-dashboard')
       return NextResponse.redirect(new URL('/doctor-dashboard', request.url))
     } else if (userRole === 'patient') {
+      console.log('Redirecting authenticated patient to dashboard')
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
-    // If no role is set yet, let them stay on the auth page to complete the process
   }
 
   // If user is trying to access doctor pages but is not a doctor

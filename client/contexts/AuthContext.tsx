@@ -65,24 +65,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function signup(email: string, password: string, name: string, role: 'doctor' | 'patient') {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password)
     await updateProfile(userCredential.user, { displayName: name })
-    
+
+    // Set auth token cookie to indicate user is authenticated
+    const token = await userCredential.user.getIdToken()
+    Cookies.set("authToken", token, { expires: 7 })
+
     await saveUserRole(userCredential.user.uid, role, {
       email,
       name,
       createdAt: new Date(),
     })
-    
+
     setUserRole(role)
   }
 
   async function login(email: string, password: string) {
     const userCredential = await signInWithEmailAndPassword(auth, email, password)
     const role = await getUserRole(userCredential.user.uid)
-    
+
+    // Set auth token cookie to indicate user is authenticated
+    const token = await userCredential.user.getIdToken()
+    Cookies.set("authToken", token, { expires: 7 })
+
     if (role) {
       setUserRole(role)
     }
-    
+
     return { role }
   }
 
@@ -101,10 +109,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // MINIMAL useEffect - only handle auth state
+  // Handle auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user)
+
+      if (user) {
+        // User is signed in, set auth token and get role
+        try {
+          const token = await user.getIdToken()
+          Cookies.set("authToken", token, { expires: 7 })
+
+          const role = await getUserRole(user.uid)
+          if (role) {
+            setUserRole(role)
+          }
+        } catch (error) {
+          console.error('Error setting auth token:', error)
+        }
+      } else {
+        // User is signed out, clear cookies
+        Cookies.remove("authToken")
+        Cookies.remove("userRole")
+        setUserRoleState(null)
+      }
+
       setLoading(false)
     })
 

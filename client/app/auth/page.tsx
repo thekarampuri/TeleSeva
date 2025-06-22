@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-// import { useAuth } from '@/contexts/AuthContext' // DISABLED TO FIX INFINITE LOOP
+import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import {
   Heart,
@@ -68,15 +68,8 @@ export default function AuthPage() {
   })
   const [role, setRole] = useState<'patient' | 'doctor'>('patient')
 
-  // const { signup, login, setUserRole, setGuestMode, redirectToRoleDashboard } = useAuth() // DISABLED
+  const { signup, login, setUserRole, setGuestMode, redirectToRoleDashboard } = useAuth()
   const router = useRouter()
-
-  // TEMPORARY PLACEHOLDER FUNCTIONS
-  const signup = async () => { console.log('Signup disabled') }
-  const login = async () => { console.log('Login disabled'); return { role: null } }
-  const setUserRole = () => {}
-  const setGuestMode = () => {}
-  const redirectToRoleDashboard = () => {}
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -97,9 +90,11 @@ export default function AuthPage() {
         toast.success('Welcome back!')
 
         // Use a small delay to ensure cookies are set before redirect
+        console.log(`About to redirect to dashboard for role: ${actualRole}`)
         setTimeout(() => {
+          console.log(`Executing redirect for role: ${actualRole}`)
           redirectToRoleDashboard(actualRole)
-        }, 100)
+        }, 500) // Increased delay to ensure cookies are properly set
 
       } else {
         console.log(`Attempting to sign up with email: ${formData.email}, name: ${formData.name}, role: ${role}`);
