@@ -77,23 +77,42 @@ export default function AuthPage() {
 
     try {
       if (isLogin) {
-        await login(formData.email, formData.password)
+        console.log(`Attempting to log in with email: ${formData.email}`);
+        
+        // Login and get the user's role from Firestore
+        const { role: userRole } = await login(formData.email, formData.password)
+        console.log(`Login successful, user role: ${userRole || 'null'}`);
+        
         toast.success('Welcome back!')
+        
+        // Redirect based on the role from Firestore
+        if (userRole === 'doctor') {
+          console.log(`Redirecting to doctor dashboard`);
+          router.push('/doctor-dashboard')
+        } else {
+          console.log(`Redirecting to patient dashboard`);
+          router.push('/')
+        }
       } else {
-        await signup(formData.email, formData.password, formData.name)
+        console.log(`Attempting to sign up with email: ${formData.email}, name: ${formData.name}, role: ${role}`);
+        
+        // Signup with the selected role and save to Firestore
+        await signup(formData.email, formData.password, formData.name, role)
+        console.log(`Signup successful with role: ${role}`);
+        
         toast.success('Account created successfully!')
-      }
-
-      // Store user role for role-based routing
-      setUserRole(role)
-
-      // Redirect based on role
-      if (role === 'doctor') {
-        router.push('/doctor-dashboard')
-      } else {
-        router.push('/')
+        
+        // Redirect based on the selected role
+        if (role === 'doctor') {
+          console.log(`Redirecting to doctor dashboard`);
+          router.push('/doctor-dashboard')
+        } else {
+          console.log(`Redirecting to patient dashboard`);
+          router.push('/')
+        }
       }
     } catch (error: any) {
+      console.error('Authentication error:', error);
       toast.error(error.message || 'Authentication failed')
     } finally {
       setLoading(false)

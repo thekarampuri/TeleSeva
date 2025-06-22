@@ -18,25 +18,20 @@ export function RoleBasedRoute({
   allowedRoles = ['patient', 'doctor'], 
   redirectTo = '/auth' 
 }: RoleBasedRouteProps) {
-  const { user, loading } = useAuth()
+  const { user, userRole, loading } = useAuth()
   const router = useRouter()
-  const [userRole, setUserRole] = useState<string | null>(null)
   const [isGuest, setIsGuest] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
     
-    // Check both localStorage and cookies for user mode and role
+    // Check both localStorage and cookies for user mode
     const userModeFromStorage = localStorage.getItem("userMode")
     const userModeFromCookie = Cookies.get("userMode")
     
-    const userRoleFromStorage = localStorage.getItem("userRole")
-    const userRoleFromCookie = Cookies.get("userRole")
-    
     // Prefer cookie values over localStorage for better security
     setIsGuest(userModeFromCookie === "guest" || userModeFromStorage === "guest")
-    setUserRole(userRoleFromCookie || userRoleFromStorage)
   }, [])
 
   useEffect(() => {
@@ -49,7 +44,7 @@ export function RoleBasedRoute({
     }
 
     // If user exists but role is not allowed, redirect
-    if (userRole && !allowedRoles.includes(userRole as 'patient' | 'doctor')) {
+    if (user && userRole && !allowedRoles.includes(userRole)) {
       // Redirect to appropriate dashboard based on role
       if (userRole === 'doctor') {
         router.push('/doctor-dashboard')

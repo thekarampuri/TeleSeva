@@ -26,14 +26,27 @@ export function middleware(request: NextRequest) {
   if (isPublicPath && token) {
     if (userRole === 'doctor') {
       return NextResponse.redirect(new URL('/doctor-dashboard', request.url))
-    } else {
+    } else if (userRole === 'patient') {
       return NextResponse.redirect(new URL('/', request.url))
     }
+    // If no role is set yet, let them stay on the auth page
   }
 
   // If user is trying to access doctor pages but is not a doctor
   if (path.startsWith('/doctor') && userRole !== 'doctor' && !path.includes('doctor-empty')) {
-    return NextResponse.redirect(new URL('/', request.url))
+    // If they're a patient, redirect to patient dashboard
+    if (userRole === 'patient') {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+    // If they're not authenticated, redirect to auth
+    else if (!token && !isGuest) {
+      return NextResponse.redirect(new URL('/auth', request.url))
+    }
+  }
+
+  // If user is trying to access patient pages but is a doctor
+  if (path === '/' && userRole === 'doctor' && token) {
+    return NextResponse.redirect(new URL('/doctor-dashboard', request.url))
   }
 
   return NextResponse.next()

@@ -13,26 +13,21 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requiredRole = null }: ProtectedRouteProps) {
-  const { user, loading } = useAuth()
+  const { user, userRole, loading } = useAuth()
   const router = useRouter()
   const [isGuest, setIsGuest] = useState(false)
-  const [userRole, setUserRole] = useState<string | null>(null)
   const [isClient, setIsClient] = useState(false)
 
   // Ensure we're on the client side before accessing localStorage and cookies
   useEffect(() => {
     setIsClient(true)
     
-    // Check both localStorage and cookies for user mode and role
+    // Check both localStorage and cookies for user mode
     const userModeFromStorage = localStorage.getItem("userMode")
     const userModeFromCookie = Cookies.get("userMode")
     
-    const userRoleFromStorage = localStorage.getItem("userRole")
-    const userRoleFromCookie = Cookies.get("userRole")
-    
     // Prefer cookie values over localStorage for better security
     setIsGuest(userModeFromCookie === "guest" || userModeFromStorage === "guest")
-    setUserRole(userRoleFromCookie || userRoleFromStorage)
   }, [])
 
   useEffect(() => {
@@ -45,11 +40,11 @@ export function ProtectedRoute({ children, requiredRole = null }: ProtectedRoute
       }
       
       // If requiredRole is specified, check if user has that role
-      if (requiredRole && userRole !== requiredRole) {
+      if (requiredRole && user && userRole !== requiredRole) {
         // Redirect based on actual role
         if (userRole === 'doctor') {
           router.push('/doctor-dashboard')
-        } else if (userRole === 'patient' || isGuest) {
+        } else if (userRole === 'patient') {
           router.push('/')
         } else {
           router.push('/auth')
@@ -85,7 +80,7 @@ export function ProtectedRoute({ children, requiredRole = null }: ProtectedRoute
   }
 
   // If no user and not guest, or if role requirement not met, return null (will redirect)
-  if ((!user && !isGuest) || (requiredRole && userRole !== requiredRole)) {
+  if ((!user && !isGuest) || (requiredRole && user && userRole !== requiredRole)) {
     return null
   }
 
