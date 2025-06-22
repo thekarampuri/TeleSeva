@@ -66,6 +66,7 @@ export default function AuthPage() {
     email: '',
     password: ''
   })
+  const [role, setRole] = useState<'patient' | 'doctor'>('patient')
 
   const { signup, login } = useAuth()
   const router = useRouter()
@@ -82,7 +83,11 @@ export default function AuthPage() {
         await signup(formData.email, formData.password, formData.name)
         toast.success('Account created successfully!')
       }
-      router.push('/')
+      if (role === 'doctor') {
+        router.push('/doctor-empty')
+      } else {
+        router.push('/')
+      }
     } catch (error: any) {
       toast.error(error.message || 'Authentication failed')
     } finally {
@@ -195,6 +200,32 @@ export default function AuthPage() {
 
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="flex items-center space-x-4 mb-2">
+                  <Label>Role:</Label>
+                  <label className="flex items-center space-x-1">
+                    <input
+                      type="radio"
+                      name="role"
+                      value="patient"
+                      checked={role === 'patient'}
+                      onChange={() => setRole('patient')}
+                      className="accent-blue-600"
+                    />
+                    <span>Patient</span>
+                  </label>
+                  <label className="flex items-center space-x-1">
+                    <input
+                      type="radio"
+                      name="role"
+                      value="doctor"
+                      checked={role === 'doctor'}
+                      onChange={() => setRole('doctor')}
+                      className="accent-purple-600"
+                    />
+                    <span>Doctor</span>
+                  </label>
+                </div>
+
                 <AnimatePresence mode="wait">
                   {!isLogin && (
                     <motion.div
