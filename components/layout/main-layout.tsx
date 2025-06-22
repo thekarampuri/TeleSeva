@@ -20,6 +20,7 @@ import {
   X,
   Heart,
   User,
+  MapPin,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -35,6 +36,7 @@ const navigation = [
   { name: "Emergency", href: "/emergency", icon: Phone },
   { name: "Notifications", href: "/notifications", icon: Bell },
   { name: "Reports", href: "/reports", icon: FileText },
+  { name: "Facility Finder", href: "/facility-finder", icon: MapPin },
 ]
 
 interface MainLayoutProps {
