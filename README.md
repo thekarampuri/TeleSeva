@@ -79,42 +79,6 @@ Hackstorm/
 └── tsconfig.json                    # Root TypeScript configuration
 ```
 
-## 🔥 Firebase Configuration
-
-The project is properly configured with Firebase for authentication, database, storage, and analytics. The configuration is located in `client/lib/firebase.ts`:
-
-### Firebase Services Used:
-- **Authentication**: User login/signup and session management using Firebase Auth
-- **Firestore Database**: Real-time NoSQL database for application data
-- **Storage**: File uploads and media storage using Firebase Storage
-- **Analytics**: User behavior tracking and insights
-
-### Configuration Details:
-- **Project ID**: teleseva-7e1c4
-- **Auth Domain**: teleseva-7e1c4.firebaseapp.com
-- **Storage Bucket**: teleseva-7e1c4.firebasestorage.app
-
-### Database Structure:
-The Firestore database includes collections for:
-- `users` - User profiles and account information
-- `consultations` - Video consultation records
-- `appointments` - Scheduled appointments
-- `healthRecords` - Patient health records and history
-- `medications` - Prescription and medication tracking
-- `symptoms` - Symptom checker data
-- `facilities` - Healthcare facility information
-- `notifications` - User notifications
-- `reports` - Health reports and analytics
-- `emergencyContacts` - Emergency contact information
-
-### Firestore Utilities:
-A comprehensive Firestore service is available in `client/lib/firestore.ts` with:
-- Generic CRUD operations
-- Real-time subscriptions
-- Query builders with filtering and pagination
-- Type-safe operations with TypeScript
-- Service-specific functions for users, consultations, and appointments
-
 ## 🚀 Getting Started
 
 ### Prerequisites
