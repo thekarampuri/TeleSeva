@@ -7,235 +7,10 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Video, Mic, MessageCircle, Star, Clock, Users, Shuffle, UserPlus, Calendar, Wifi, AlertCircle } from "lucide-react"
+import { doctorAvailabilityService } from "@/lib/firebase/doctor-availability"
 import { consultationBookingService } from "@/lib/firebase/consultation-booking"
 import { DoctorProfile } from "@/lib/firebase/types"
-import { useAuth } from "@/contexts/AuthContext"
-
-// Mock Indian doctors data
-const mockDoctors: DoctorProfile[] = [
-  {
-    uid: "dr_sharma_001",
-    email: "dr.sharma@teleseva.com",
-    displayName: "Dr. Rajesh Sharma",
-    profilePicture: "/placeholder.svg",
-    role: "doctor",
-    specialization: "General Medicine",
-    qualification: ["MBBS", "MD Internal Medicine"],
-    experience: 12,
-    licenseNumber: "MH12345",
-    consultationFee: 500,
-    languages: ["Hindi", "English", "Marathi"],
-    availability: {
-      isOnline: true,
-      lastSeen: new Date(),
-      workingHours: {
-        monday: { start: "09:00", end: "17:00", isAvailable: true },
-        tuesday: { start: "09:00", end: "17:00", isAvailable: true },
-        wednesday: { start: "09:00", end: "17:00", isAvailable: true },
-        thursday: { start: "09:00", end: "17:00", isAvailable: true },
-        friday: { start: "09:00", end: "17:00", isAvailable: true },
-        saturday: { start: "09:00", end: "13:00", isAvailable: true },
-        sunday: { start: "10:00", end: "12:00", isAvailable: false }
-      }
-    },
-    rating: {
-      average: 4.8,
-      totalReviews: 156
-    },
-    hospital: {
-      name: "Apollo Hospital",
-      address: "Mumbai, Maharashtra",
-      phone: "+91-9876543210"
-    },
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    uid: "dr_patel_002",
-    email: "dr.patel@teleseva.com",
-    displayName: "Dr. Priya Patel",
-    profilePicture: "/placeholder.svg",
-    role: "doctor",
-    specialization: "Pediatrics",
-    qualification: ["MBBS", "MD Pediatrics"],
-    experience: 8,
-    licenseNumber: "GJ67890",
-    consultationFee: 450,
-    languages: ["Hindi", "English", "Gujarati"],
-    availability: {
-      isOnline: true,
-      lastSeen: new Date(),
-      workingHours: {
-        monday: { start: "10:00", end: "18:00", isAvailable: true },
-        tuesday: { start: "10:00", end: "18:00", isAvailable: true },
-        wednesday: { start: "10:00", end: "18:00", isAvailable: true },
-        thursday: { start: "10:00", end: "18:00", isAvailable: true },
-        friday: { start: "10:00", end: "18:00", isAvailable: true },
-        saturday: { start: "10:00", end: "14:00", isAvailable: true },
-        sunday: { start: "11:00", end: "13:00", isAvailable: false }
-      }
-    },
-    rating: {
-      average: 4.9,
-      totalReviews: 203
-    },
-    hospital: {
-      name: "Fortis Hospital",
-      address: "Ahmedabad, Gujarat",
-      phone: "+91-9876543211"
-    },
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    uid: "dr_kumar_003",
-    email: "dr.kumar@teleseva.com",
-    displayName: "Dr. Amit Kumar",
-    profilePicture: "/placeholder.svg",
-    role: "doctor",
-    specialization: "Cardiology",
-    qualification: ["MBBS", "MD Cardiology", "DM Interventional Cardiology"],
-    experience: 15,
-    licenseNumber: "DL11223",
-    consultationFee: 800,
-    languages: ["Hindi", "English", "Punjabi"],
-    availability: {
-      isOnline: true,
-      lastSeen: new Date(),
-      workingHours: {
-        monday: { start: "08:00", end: "16:00", isAvailable: true },
-        tuesday: { start: "08:00", end: "16:00", isAvailable: true },
-        wednesday: { start: "08:00", end: "16:00", isAvailable: true },
-        thursday: { start: "08:00", end: "16:00", isAvailable: true },
-        friday: { start: "08:00", end: "16:00", isAvailable: true },
-        saturday: { start: "09:00", end: "12:00", isAvailable: true },
-        sunday: { start: "10:00", end: "12:00", isAvailable: false }
-      }
-    },
-    rating: {
-      average: 4.7,
-      totalReviews: 89
-    },
-    hospital: {
-      name: "AIIMS",
-      address: "New Delhi",
-      phone: "+91-9876543212"
-    },
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    uid: "dr_reddy_004",
-    email: "dr.reddy@teleseva.com",
-    displayName: "Dr. Lakshmi Reddy",
-    profilePicture: "/placeholder.svg",
-    role: "doctor",
-    specialization: "Gynecology",
-    qualification: ["MBBS", "MS Obstetrics & Gynecology"],
-    experience: 10,
-    licenseNumber: "AP44556",
-    consultationFee: 600,
-    languages: ["Telugu", "English", "Hindi"],
-    availability: {
-      isOnline: true,
-      lastSeen: new Date(),
-      workingHours: {
-        monday: { start: "09:30", end: "17:30", isAvailable: true },
-        tuesday: { start: "09:30", end: "17:30", isAvailable: true },
-        wednesday: { start: "09:30", end: "17:30", isAvailable: true },
-        thursday: { start: "09:30", end: "17:30", isAvailable: true },
-        friday: { start: "09:30", end: "17:30", isAvailable: true },
-        saturday: { start: "10:00", end: "15:00", isAvailable: true },
-        sunday: { start: "11:00", end: "13:00", isAvailable: false }
-      }
-    },
-    rating: {
-      average: 4.9,
-      totalReviews: 134
-    },
-    hospital: {
-      name: "Care Hospital",
-      address: "Hyderabad, Telangana",
-      phone: "+91-9876543213"
-    },
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    uid: "dr_singh_005",
-    email: "dr.singh@teleseva.com",
-    displayName: "Dr. Manpreet Singh",
-    profilePicture: "/placeholder.svg",
-    role: "doctor",
-    specialization: "Orthopedics",
-    qualification: ["MBBS", "MS Orthopedics"],
-    experience: 9,
-    licenseNumber: "PB78901",
-    consultationFee: 550,
-    languages: ["Punjabi", "Hindi", "English"],
-    availability: {
-      isOnline: true,
-      lastSeen: new Date(),
-      workingHours: {
-        monday: { start: "08:30", end: "16:30", isAvailable: true },
-        tuesday: { start: "08:30", end: "16:30", isAvailable: true },
-        wednesday: { start: "08:30", end: "16:30", isAvailable: true },
-        thursday: { start: "08:30", end: "16:30", isAvailable: true },
-        friday: { start: "08:30", end: "16:30", isAvailable: true },
-        saturday: { start: "09:00", end: "13:00", isAvailable: true },
-        sunday: { start: "10:00", end: "12:00", isAvailable: false }
-      }
-    },
-    rating: {
-      average: 4.6,
-      totalReviews: 78
-    },
-    hospital: {
-      name: "Max Hospital",
-      address: "Chandigarh, Punjab",
-      phone: "+91-9876543214"
-    },
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    uid: "dr_nair_006",
-    email: "dr.nair@teleseva.com",
-    displayName: "Dr. Suresh Nair",
-    profilePicture: "/placeholder.svg",
-    role: "doctor",
-    specialization: "Dermatology",
-    qualification: ["MBBS", "MD Dermatology"],
-    experience: 7,
-    licenseNumber: "KL33445",
-    consultationFee: 400,
-    languages: ["Malayalam", "English", "Hindi"],
-    availability: {
-      isOnline: true,
-      lastSeen: new Date(),
-      workingHours: {
-        monday: { start: "10:00", end: "18:00", isAvailable: true },
-        tuesday: { start: "10:00", end: "18:00", isAvailable: true },
-        wednesday: { start: "10:00", end: "18:00", isAvailable: true },
-        thursday: { start: "10:00", end: "18:00", isAvailable: true },
-        friday: { start: "10:00", end: "18:00", isAvailable: true },
-        saturday: { start: "10:00", end: "14:00", isAvailable: true },
-        sunday: { start: "11:00", end: "13:00", isAvailable: false }
-      }
-    },
-    rating: {
-      average: 4.8,
-      totalReviews: 112
-    },
-    hospital: {
-      name: "Aster Medcity",
-      address: "Kochi, Kerala",
-      phone: "+91-9876543215"
-    },
-    createdAt: new Date(),
-    updatedAt: new Date()
-  }
-]
+import { useAuth } from "@/lib/firebase/auth.tsx"
 
 const consultationModes = [
   { id: "video", label: "Video Call", icon: Video, price: "₹299" },
@@ -252,15 +27,14 @@ export default function ConsultationPage() {
   const [booking, setBooking] = useState(false)
   const { user } = useAuth()
 
-  // Load available doctors (using mock data)
+  // Load available doctors
   useEffect(() => {
-    // Simulate loading delay
-    const timer = setTimeout(() => {
-      setAvailableDoctors(mockDoctors)
+    const unsubscribe = doctorAvailabilityService.subscribeToAvailableDoctors((doctors) => {
+      setAvailableDoctors(doctors)
       setLoading(false)
-    }, 1000)
+    })
 
-    return () => clearTimeout(timer)
+    return unsubscribe
   }, [])
 
   // Handle booking consultation

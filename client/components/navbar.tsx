@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Heart, Menu, X, LogIn, UserPlus } from "lucide-react"
+import { Heart, Menu, X, UserCheck } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useAuth } from "@/contexts/AuthContext"
 
@@ -62,8 +62,8 @@ export function Navbar() {
               </span>
             </Link>
             
-            {/* Auth Buttons moved to top left - Desktop */}
-            <div className="hidden md:flex items-center ml-4 space-x-3">
+            {/* Auth Button moved to top left - Desktop */}
+            <div className="hidden md:flex items-center ml-4">
               {user ? (
                 <Button
                   variant={isScrolled ? "default" : "outline"}
@@ -75,33 +75,19 @@ export function Navbar() {
                   Logout
                 </Button>
               ) : (
-                <>
-                  <Button
-                    variant={isScrolled ? "outline" : "outline"}
-                    className={`${
-                      !isScrolled && "border-white text-black hover:bg-white/20"
-                    } text-black`}
-                    asChild
-                  >
-                    <Link href="/auth">
-                      <LogIn className="mr-2 h-4 w-4" />
-                      Login
-                    </Link>
-                  </Button>
-                  <Button
-                    className={`${
-                      !isScrolled
-                        ? "bg-white text-blue-600 hover:bg-white/90"
-                        : "bg-gradient-to-r from-blue-600 to-purple-600 text-white"
-                    }`}
-                    asChild
-                  >
-                    <Link href="/auth">
-                      <UserPlus className="mr-2 h-4 w-4" />
-                      Sign Up
-                    </Link>
-                  </Button>
-                </>
+                <Button
+                  className={`${
+                    !isScrolled
+                      ? "bg-white text-blue-600 hover:bg-white/90"
+                      : "bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+                  }`}
+                  asChild
+                >
+                  <Link href="/auth">
+                    <UserCheck className="mr-2 h-4 w-4" />
+                    Signup / Login
+                  </Link>
+                </Button>
               )}
             </div>
           </div>
@@ -142,20 +128,12 @@ export function Navbar() {
                 {user ? (
                   <Button onClick={logout}>Logout</Button>
                 ) : (
-                  <>
-                    <Button variant="outline" asChild className="text-black">
-                      <Link href="/auth">
-                        <LogIn className="mr-2 h-4 w-4" />
-                        Login
-                      </Link>
-                    </Button>
-                    <Button asChild>
-                      <Link href="/auth">
-                        <UserPlus className="mr-2 h-4 w-4" />
-                        Sign Up
-                      </Link>
-                    </Button>
-                  </>
+                  <Button asChild>
+                    <Link href="/auth">
+                      <UserCheck className="mr-2 h-4 w-4" />
+                      Signup / Login
+                    </Link>
+                  </Button>
                 )}
               </div>
             </div>
