@@ -6,10 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { MainLayout } from "@/components/layout/main-layout"
-import { Mic, MicOff, Send, Bot, User, Languages, Play, Pause, AlertTriangle, Clock, CheckCircle } from "lucide-react"
+import { Mic, MicOff, Send, Bot, User, Languages, Play, Pause, AlertTriangle, Clock, CheckCircle, Settings } from "lucide-react"
 import { geminiSymptomChecker } from "@/lib/gemini"
 import { conversationManager, type Message } from "@/lib/conversation-context"
 import { responseFormatter } from "@/lib/response-formatter"
+import { speechRecognitionService, type SpeechRecognitionResult } from "@/lib/speech-recognition"
+import { textToSpeechService } from "@/lib/text-to-speech"
+import { VoiceSettings } from "@/components/voice-settings"
 
 // Remove the local Message interface since we're importing it from conversation-context
 
@@ -29,16 +32,39 @@ export default function SymptomCheckerPage() {
   const [selectedLanguage, setSelectedLanguage] = useState("en")
   const [isPlaying, setIsPlaying] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [voiceInputUsed, setVoiceInputUsed] = useState(false)
+  const [speechRecognitionSupported, setSpeechRecognitionSupported] = useState(false)
+  const [ttsSupported, setTtsSupported] = useState(false)
+  const [interimTranscript, setInterimTranscript] = useState("")
+  const [showVoiceSettings, setShowVoiceSettings] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Initialize conversation on component mount
+  // Initialize conversation and voice services on component mount
   useEffect(() => {
     const initializeChat = async () => {
       try {
+        // Initialize chat
         const greeting = geminiSymptomChecker.getInitialGreeting()
         const session = conversationManager.getCurrentSession()
         if (session) {
           setMessages(session.messages)
+        }
+
+        // Check voice service support
+        setSpeechRecognitionSupported(speechRecognitionService.isRecognitionSupported())
+        setTtsSupported(textToSpeechService.isTTSSupported())
+
+        // Request microphone permission if supported
+        if (speechRecognitionService.isRecognitionSupported()) {
+          await speechRecognitionService.requestMicrophonePermission()
+        }
+
+        // Configure TTS for medical content
+        if (textToSpeechService.isTTSSupported()) {
+          const medicalVoices = textToSpeechService.getMedicalVoices()
+          if (medicalVoices.length > 0) {
+            textToSpeechService.setVoiceByName(medicalVoices[0].name)
+          }
         }
       } catch (error) {
         console.error('Error initializing chat:', error)
@@ -65,8 +91,10 @@ export default function SymptomCheckerPage() {
     if (!inputMessage.trim() || isLoading) return
 
     const userInput = inputMessage.trim()
+    const wasVoiceInput = voiceInputUsed
     setInputMessage("")
     setIsLoading(true)
+    setVoiceInputUsed(false) // Reset voice input flag
 
     try {
       // Analyze symptoms with Gemini AI
@@ -76,6 +104,20 @@ export default function SymptomCheckerPage() {
       const session = conversationManager.getCurrentSession()
       if (session) {
         setMessages([...session.messages])
+
+        // If user used voice input, automatically play the response
+        if (wasVoiceInput && ttsSupported && session.messages.length > 0) {
+          const lastBotMessage = session.messages
+            .slice()
+            .reverse()
+            .find(msg => msg.type === 'bot')
+
+          if (lastBotMessage) {
+            setTimeout(() => {
+              handlePlayAudio(lastBotMessage.id, lastBotMessage.content)
+            }, 500) // Small delay to ensure UI is updated
+          }
+        }
       }
 
       scrollToBottom()
@@ -90,13 +132,79 @@ export default function SymptomCheckerPage() {
   // Remove getBotResponse since we're using Gemini AI now
 
   const handleVoiceInput = () => {
-    setIsRecording(!isRecording)
-    // Voice recording logic would go here
+    if (!speechRecognitionSupported) {
+      alert('Speech recognition is not supported in your browser. Please use a modern browser like Chrome, Edge, or Safari.')
+      return
+    }
+
+    if (isRecording) {
+      // Stop recording
+      speechRecognitionService.stopListening()
+      setIsRecording(false)
+      setInterimTranscript("")
+    } else {
+      // Start recording
+      setIsRecording(true)
+      setInterimTranscript("")
+      setVoiceInputUsed(true)
+
+      speechRecognitionService.startListening(
+        (result: SpeechRecognitionResult) => {
+          if (result.isFinal) {
+            // Final result - add to input
+            setInputMessage(prev => prev + result.transcript)
+            setInterimTranscript("")
+            setIsRecording(false)
+          } else {
+            // Interim result - show as preview
+            setInterimTranscript(result.transcript)
+          }
+        },
+        (error: string) => {
+          console.error('Speech recognition error:', error)
+          setIsRecording(false)
+          setInterimTranscript("")
+          alert(`Voice input error: ${error}`)
+        },
+        () => {
+          // Recognition ended
+          setIsRecording(false)
+          setInterimTranscript("")
+        }
+      )
+    }
   }
 
-  const handlePlayAudio = (messageId: string) => {
-    setIsPlaying(isPlaying === messageId ? null : messageId)
-    // Text-to-speech logic would go here
+  const handlePlayAudio = (messageId: string, messageContent: string) => {
+    if (!ttsSupported) {
+      alert('Text-to-speech is not supported in your browser.')
+      return
+    }
+
+    if (isPlaying === messageId) {
+      // Stop current playback
+      textToSpeechService.stop()
+      setIsPlaying(null)
+    } else {
+      // Stop any current playback first
+      textToSpeechService.stop()
+      setIsPlaying(messageId)
+
+      // Start new playback
+      textToSpeechService.speak(messageContent, {
+        onStart: () => {
+          setIsPlaying(messageId)
+        },
+        onEnd: () => {
+          setIsPlaying(null)
+        },
+        onError: (error) => {
+          console.error('TTS Error:', error)
+          setIsPlaying(null)
+          alert(`Audio playback error: ${error}`)
+        }
+      })
+    }
   }
 
   const getUrgencyIcon = (urgencyLevel?: string) => {
@@ -168,13 +276,28 @@ export default function SymptomCheckerPage() {
         {/* Chat Interface */}
         <Card className="bg-white/80 backdrop-blur-sm border-0">
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <Bot className="h-5 w-5 mr-2 text-purple-600" />
-              Health Assistant Chat
-            </CardTitle>
-            <CardDescription>
-              Type or speak your symptoms. The AI will ask follow-up questions to better understand your condition.
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center">
+                  <Bot className="h-5 w-5 mr-2 text-purple-600" />
+                  Health Assistant Chat
+                </CardTitle>
+                <CardDescription>
+                  Type or speak your symptoms. The AI will ask follow-up questions to better understand your condition.
+                </CardDescription>
+              </div>
+              {(speechRecognitionSupported || ttsSupported) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowVoiceSettings(true)}
+                  className="flex items-center space-x-1"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span className="hidden sm:inline">Voice Settings</span>
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {/* Messages */}
@@ -247,15 +370,26 @@ export default function SymptomCheckerPage() {
                         <span className={`text-xs ${message.type === "user" ? "text-blue-100" : "text-gray-500"}`}>
                           {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                         </span>
-                        {message.hasAudio && message.type === "bot" && (
+                        {message.hasAudio && message.type === "bot" && ttsSupported && (
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-6 w-6 p-0"
-                            onClick={() => handlePlayAudio(message.id)}
+                            className={`h-6 w-6 p-0 ${isPlaying === message.id ? 'text-blue-600' : 'text-gray-500 hover:text-blue-600'}`}
+                            onClick={() => handlePlayAudio(message.id, message.content)}
+                            title={isPlaying === message.id ? 'Stop audio' : 'Play audio'}
                           >
-                            {isPlaying === message.id ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+                            {isPlaying === message.id ? (
+                              <Pause className="h-3 w-3 animate-pulse" />
+                            ) : (
+                              <Play className="h-3 w-3" />
+                            )}
                           </Button>
+                        )}
+
+                        {message.type === "bot" && !ttsSupported && (
+                          <div className="text-xs text-gray-400" title="Audio not supported in this browser">
+                            🔇
+                          </div>
                         )}
                       </div>
                     </div>
@@ -290,43 +424,84 @@ export default function SymptomCheckerPage() {
             </div>
 
             {/* Input Area */}
-            <div className="flex items-center space-x-2">
-              <div className="flex-1 relative">
-                <Input
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  placeholder="Describe your symptoms..."
-                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
-                  className="pr-12"
-                  disabled={isLoading}
-                />
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <div className="flex-1 relative">
+                  <Input
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    placeholder={isRecording ? "Listening..." : "Describe your symptoms..."}
+                    onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
+                    className="pr-12"
+                    disabled={isLoading || isRecording}
+                  />
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className={`absolute right-1 top-1 h-8 w-8 p-0 ${
+                      !speechRecognitionSupported ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                    onClick={handleVoiceInput}
+                    disabled={!speechRecognitionSupported || isLoading}
+                    title={
+                      !speechRecognitionSupported
+                        ? 'Voice input not supported in this browser'
+                        : isRecording
+                        ? 'Stop recording'
+                        : 'Start voice input'
+                    }
+                  >
+                    {isRecording ? (
+                      <MicOff className="h-4 w-4 text-red-500 animate-pulse" />
+                    ) : (
+                      <Mic className={`h-4 w-4 ${speechRecognitionSupported ? 'text-gray-500 hover:text-blue-500' : 'text-gray-300'}`} />
+                    )}
+                  </Button>
+                </div>
                 <Button
-                  size="sm"
-                  variant="ghost"
-                  className="absolute right-1 top-1 h-8 w-8 p-0"
-                  onClick={handleVoiceInput}
+                  onClick={handleSendMessage}
+                  disabled={!inputMessage.trim() || isLoading || isRecording}
+                  className="bg-blue-600 hover:bg-blue-700"
                 >
-                  {isRecording ? (
-                    <MicOff className="h-4 w-4 text-red-500" />
-                  ) : (
-                    <Mic className="h-4 w-4 text-gray-500" />
-                  )}
+                  <Send className="h-4 w-4" />
                 </Button>
               </div>
-              <Button
-                onClick={handleSendMessage}
-                disabled={!inputMessage.trim() || isLoading}
-              >
-                <Send className="h-4 w-4" />
-              </Button>
-            </div>
 
-            {isRecording && (
-              <div className="mt-2 flex items-center justify-center space-x-2 text-red-500">
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                <span className="text-sm">Recording... Speak now</span>
-              </div>
-            )}
+              {/* Voice input feedback */}
+              {isRecording && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <div className="flex items-center space-x-2 text-red-600 mb-2">
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                    <span className="text-sm font-medium">Recording... Speak clearly</span>
+                  </div>
+                  {interimTranscript && (
+                    <div className="text-sm text-gray-600 italic">
+                      "{interimTranscript}"
+                    </div>
+                  )}
+                  <div className="text-xs text-gray-500 mt-1">
+                    Click the microphone again or stop speaking to finish
+                  </div>
+                </div>
+              )}
+
+              {/* Voice service status */}
+              {(!speechRecognitionSupported || !ttsSupported) && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2">
+                  <div className="text-xs text-yellow-700">
+                    {!speechRecognitionSupported && !ttsSupported && (
+                      "Voice features not supported in this browser. Please use Chrome, Edge, or Safari for voice input and audio responses."
+                    )}
+                    {!speechRecognitionSupported && ttsSupported && (
+                      "Voice input not supported. Audio responses are available."
+                    )}
+                    {speechRecognitionSupported && !ttsSupported && (
+                      "Audio responses not supported. Voice input is available."
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -345,6 +520,12 @@ export default function SymptomCheckerPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Voice Settings Modal */}
+        <VoiceSettings
+          isOpen={showVoiceSettings}
+          onClose={() => setShowVoiceSettings(false)}
+        />
       </div>
     </MainLayout>
   )
