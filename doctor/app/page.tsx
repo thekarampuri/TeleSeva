@@ -79,6 +79,10 @@ export default function TeleSevaPortal() {
   const [consultationActive, setConsultationActive] = useState(false)
   const [micEnabled, setMicEnabled] = useState(true)
   const [cameraEnabled, setCameraEnabled] = useState(true)
+  const [isOnline, setIsOnline] = useState(false)
+  const [availabilityStatus, setAvailabilityStatus] = useState<'available' | 'busy' | 'in-consultation' | 'offline'>('offline')
+  const [doctorAppointments, setDoctorAppointments] = useState<any[]>([])
+  const [appointmentsLoading, setAppointmentsLoading] = useState(true)
   const [prescriptionForm, setPrescriptionForm] = useState({
     medicine: "",
     dosage: "",
@@ -151,8 +155,21 @@ export default function TeleSevaPortal() {
     location: "Village Clinic, Sector 7",
   }
 
-  const handleAppointmentAction = (id: number, action: string) => {
-    setAppointments((prev) => prev.map((apt) => (apt.id === id ? { ...apt, status: action } : apt)))
+  const handleAppointmentAction = async (appointmentId: string, status: string) => {
+    try {
+      // This would be implemented with Firebase
+      console.log(`Updating appointment ${appointmentId} to status: ${status}`)
+      // await consultationBookingService.updateAppointmentStatus(appointmentId, status, doctorId)
+
+      // Update local state for immediate feedback
+      setDoctorAppointments(prev =>
+        prev.map(apt =>
+          apt.id === appointmentId ? { ...apt, status } : apt
+        )
+      )
+    } catch (error) {
+      console.error('Error updating appointment:', error)
+    }
   }
 
   const handleCopyLink = () => {
@@ -396,87 +413,108 @@ export default function TeleSevaPortal() {
         </div>
       </motion.div>
 
-      <div className="grid gap-4">
-        {appointments.map((appointment, index) => (
-          <motion.div key={appointment.id} variants={itemVariants} whileHover={{ scale: 1.02 }} className="group">
-            <Card className="bg-white border-gray-100 hover:border-blue-200 transition-all duration-300 shadow-md hover:shadow-lg">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <Avatar className="h-12 w-12 ring-2 ring-blue-100 group-hover:ring-blue-200 transition-all">
-                      <AvatarImage src={appointment.avatar || "/placeholder.svg"} />
-                      <AvatarFallback className="bg-blue-100 text-blue-600">
-                        {appointment.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="font-semibold text-lg flex items-center">
-                        <UserCheck className="h-4 w-4 mr-2 text-green-500" />
-                        {appointment.name}
-                      </h3>
-                      <p className="text-gray-600 flex items-center">
-                        <Users className="h-4 w-4 mr-1" />
-                        Age: {appointment.age} •
-                        <Stethoscope className="h-4 w-4 ml-2 mr-1" />
-                        {appointment.issue}
-                      </p>
-                      <p className="text-sm text-blue-600 font-medium flex items-center">
-                        <Clock className="h-4 w-4 mr-1" />
-                        {appointment.time}
-                      </p>
+      {appointmentsLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-2 text-gray-600">Loading appointments...</span>
+        </div>
+      ) : doctorAppointments.length === 0 ? (
+        <div className="text-center py-8">
+          <div className="text-gray-500 mb-4">
+            <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
+            <p>No appointments scheduled</p>
+            <p className="text-sm">New appointments will appear here</p>
+          </div>
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          {doctorAppointments.map((appointment, index) => (
+            <motion.div key={appointment.id} variants={itemVariants} whileHover={{ scale: 1.02 }} className="group">
+              <Card className="bg-white border-gray-100 hover:border-blue-200 transition-all duration-300 shadow-md hover:shadow-lg">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <Avatar className="h-12 w-12 ring-2 ring-blue-100 group-hover:ring-blue-200 transition-all">
+                        <AvatarImage src="/placeholder.svg" />
+                        <AvatarFallback className="bg-blue-100 text-blue-600">
+                          {appointment.patientDetails.name
+                            .split(" ")
+                            .map((n: string) => n[0])
+                            .join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h3 className="font-semibold text-lg flex items-center">
+                          <UserCheck className="h-4 w-4 mr-2 text-green-500" />
+                          {appointment.patientDetails.name}
+                        </h3>
+                        <p className="text-gray-600 flex items-center">
+                          <Users className="h-4 w-4 mr-1" />
+                          {appointment.patientDetails.age ? `Age: ${appointment.patientDetails.age}` : 'Age: N/A'} •
+                          <Stethoscope className="h-4 w-4 ml-2 mr-1" />
+                          {appointment.symptoms || 'General consultation'}
+                        </p>
+                        <p className="text-sm text-blue-600 font-medium flex items-center">
+                          <Clock className="h-4 w-4 mr-1" />
+                          {appointment.appointmentDate.toLocaleDateString()} at {appointment.appointmentTime}
+                        </p>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <Badge variant="outline" className="text-xs">
+                            {appointment.type}
+                          </Badge>
+                          <span className="text-sm text-green-600 font-medium">
+                            ₹{appointment.payment.amount}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      {appointment.status === "pending" ? (
+                        <>
+                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                            <Button
+                              size="sm"
+                              className="bg-green-500 hover:bg-green-600 text-white rounded-full px-4"
+                              onClick={() => handleAppointmentAction(appointment.id, "confirmed")}
+                            >
+                              <Check className="h-4 w-4 mr-1" />
+                              Accept
+                            </Button>
+                          </motion.div>
+                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-red-600 border-red-200 hover:bg-red-50 rounded-full px-4"
+                              onClick={() => handleAppointmentAction(appointment.id, "cancelled")}
+                            >
+                              <X className="h-4 w-4 mr-1" />
+                              Decline
+                            </Button>
+                          </motion.div>
+                        </>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className={`px-4 py-2 ${
+                            appointment.status === 'confirmed' ? 'bg-green-50 text-green-700 border-green-200' :
+                            appointment.status === 'in-progress' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                            appointment.status === 'completed' ? 'bg-gray-50 text-gray-700 border-gray-200' :
+                            appointment.status === 'cancelled' ? 'bg-red-50 text-red-700 border-red-200' :
+                            ''
+                          }`}
+                        >
+                          {appointment.status}
+                        </Badge>
+                      )}
                     </div>
                   </div>
-                  <div className="flex space-x-2">
-                    {appointment.status === "pending" ? (
-                      <>
-                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                          <Button
-                            size="sm"
-                            className="bg-green-500 hover:bg-green-600 text-white rounded-full px-4"
-                            onClick={() => handleAppointmentAction(appointment.id, "accepted")}
-                          >
-                            <Check className="h-4 w-4 mr-1" />
-                            Accept
-                          </Button>
-                        </motion.div>
-                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="rounded-full px-4 hover:bg-blue-50"
-                            onClick={() => handleAppointmentAction(appointment.id, "rescheduled")}
-                          >
-                            <Clock className="h-4 w-4 mr-1" />
-                            Reschedule
-                          </Button>
-                        </motion.div>
-                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-red-600 border-red-200 hover:bg-red-50 rounded-full px-4"
-                            onClick={() => handleAppointmentAction(appointment.id, "rejected")}
-                          >
-                            <X className="h-4 w-4 mr-1" />
-                            Reject
-                          </Button>
-                        </motion.div>
-                      </>
-                    ) : (
-                      <Badge variant="outline" className="px-4 py-2">
-                        {appointment.status}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
-      </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      )}
     </motion.div>
   )
 
@@ -1570,6 +1608,51 @@ export default function TeleSevaPortal() {
             </div>
 
             <div className="flex items-center space-x-4">
+              {/* Availability Toggle */}
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  variant={isOnline ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setIsOnline(!isOnline)
+                    setAvailabilityStatus(isOnline ? 'offline' : 'available')
+                  }}
+                  className={`${
+                    isOnline
+                      ? "bg-green-500 hover:bg-green-600 text-white"
+                      : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                  } transition-all duration-300`}
+                >
+                  {isOnline ? (
+                    <>
+                      <Wifi className="h-4 w-4 mr-2" />
+                      Online
+                    </>
+                  ) : (
+                    <>
+                      <WifiOff className="h-4 w-4 mr-2" />
+                      Offline
+                    </>
+                  )}
+                </Button>
+              </motion.div>
+
+              {/* Status Indicator */}
+              {isOnline && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex items-center space-x-2"
+                >
+                  <div className={`w-2 h-2 rounded-full ${
+                    availabilityStatus === 'available' ? 'bg-green-500' :
+                    availabilityStatus === 'busy' ? 'bg-yellow-500' :
+                    availabilityStatus === 'in-consultation' ? 'bg-red-500' : 'bg-gray-500'
+                  }`} />
+                  <span className="text-xs text-gray-600 capitalize">{availabilityStatus}</span>
+                </motion.div>
+              )}
+
               <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
                 <Button variant="ghost" size="sm" className="relative hover:bg-gray-100">
                   <Bell className="h-5 w-5" />
