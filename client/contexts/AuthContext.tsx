@@ -1,7 +1,8 @@
 "use client"
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { 
+import { useRouter } from 'next/navigation'
+import {
   User,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -32,6 +33,7 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   async function signup(email: string, password: string, name: string) {
     const { user } = await createUserWithEmailAndPassword(auth, email, password)
@@ -42,8 +44,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return signInWithEmailAndPassword(auth, email, password)
   }
 
-  function logout() {
-    return signOut(auth)
+  async function logout() {
+    try {
+      await signOut(auth)
+      // Clear any guest mode data
+      localStorage.removeItem("userMode")
+      // Redirect to auth page
+      router.push('/auth')
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
   }
 
   useEffect(() => {

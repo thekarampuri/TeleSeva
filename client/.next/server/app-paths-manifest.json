@@ -1,8 +1,7 @@
 {
+  "/health-tips/page": "app/health-tips/page.js",
+  "/doctor-empty/page": "app/doctor-empty/page.js",
   "/auth/page": "app/auth/page.js",
   "/consultation/page": "app/consultation/page.js",
-  "/page": "app/page.js",
-  "/symptom-checker/page": "app/symptom-checker/page.js",
-  "/health-tips/page": "app/health-tips/page.js",
-  "/medicine/page": "app/medicine/page.js"
+  "/page": "app/page.js"
 }

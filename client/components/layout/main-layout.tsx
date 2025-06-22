@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/AuthContext"
+import { toast } from "sonner"
 import {
   Home,
   Stethoscope,
@@ -170,9 +171,15 @@ export function MainLayout({ children }: MainLayoutProps) {
                 variant="outline"
                 size="sm"
                 className="w-full"
-                onClick={() => {
-                  logout()
-                  setSidebarOpen(false)
+                onClick={async () => {
+                  try {
+                    toast.loading("Signing out...")
+                    await logout()
+                    setSidebarOpen(false)
+                    toast.success("Signed out successfully!")
+                  } catch (error) {
+                    toast.error("Failed to sign out")
+                  }
                 }}
               >
                 <LogOut className="h-4 w-4 mr-2" />
@@ -308,7 +315,15 @@ export function MainLayout({ children }: MainLayoutProps) {
                       variant="outline"
                       size="sm"
                       className="w-full"
-                      onClick={() => logout()}
+                      onClick={async () => {
+                        try {
+                          toast.loading("Signing out...")
+                          await logout()
+                          toast.success("Signed out successfully!")
+                        } catch (error) {
+                          toast.error("Failed to sign out")
+                        }
+                      }}
                     >
                       <LogOut className="h-4 w-4 mr-2" />
                       Sign Out
@@ -330,7 +345,15 @@ export function MainLayout({ children }: MainLayoutProps) {
                       variant="outline"
                       size="sm"
                       className="w-full"
-                      onClick={() => logout()}
+                      onClick={async () => {
+                        try {
+                          toast.loading("Signing out...")
+                          await logout()
+                          toast.success("Signed out successfully!")
+                        } catch (error) {
+                          toast.error("Failed to sign out")
+                        }
+                      }}
                     >
                       <LogOut className="h-4 w-4" />
                     </Button>
