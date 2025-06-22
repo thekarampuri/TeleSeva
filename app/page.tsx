@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { MainLayout } from "@/components/layout/main-layout"
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
 import {
   Stethoscope,
   Bot,
@@ -142,7 +143,8 @@ export default function HomePage() {
   }))
 
   return (
-    <MainLayout>
+    <ProtectedRoute>
+      <MainLayout>
       <motion.div 
         className="p-6 space-y-12"
         variants={containerVariants}
@@ -331,5 +333,6 @@ export default function HomePage() {
         </motion.div>
       </motion.div>
     </MainLayout>
+    </ProtectedRoute>
   )
 }
