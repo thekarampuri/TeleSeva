@@ -1,20 +1,17 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { MainLayout } from "@/components/layout/main-layout"
-import { Mic, MicOff, Send, Bot, User, Languages, Play, Pause } from "lucide-react"
+import { Mic, MicOff, Send, Bot, User, Languages, Play, Pause, AlertTriangle, Clock, CheckCircle } from "lucide-react"
+import { geminiSymptomChecker } from "@/lib/gemini"
+import { conversationManager, type Message } from "@/lib/conversation-context"
+import { responseFormatter } from "@/lib/response-formatter"
 
-interface Message {
-  id: number
-  type: "user" | "bot"
-  content: string
-  timestamp: Date
-  hasAudio?: boolean
-}
+// Remove the local Message interface since we're importing it from conversation-context
 
 const languages = [
   { code: "en", name: "English" },
@@ -26,75 +23,110 @@ const languages = [
 ]
 
 export default function SymptomCheckerPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      type: "bot",
-      content:
-        "Hello! I'm your AI health assistant. I can help you understand your symptoms. You can type or speak to me in your preferred language. How are you feeling today?",
-      timestamp: new Date(),
-      hasAudio: true,
-    },
-  ])
+  const [messages, setMessages] = useState<Message[]>([])
   const [inputMessage, setInputMessage] = useState("")
   const [isRecording, setIsRecording] = useState(false)
   const [selectedLanguage, setSelectedLanguage] = useState("en")
-  const [isPlaying, setIsPlaying] = useState<number | null>(null)
+  const [isPlaying, setIsPlaying] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Initialize conversation on component mount
+  useEffect(() => {
+    const initializeChat = async () => {
+      try {
+        const greeting = geminiSymptomChecker.getInitialGreeting()
+        const session = conversationManager.getCurrentSession()
+        if (session) {
+          setMessages(session.messages)
+        }
+      } catch (error) {
+        console.error('Error initializing chat:', error)
+      }
+    }
+
+    initializeChat()
+  }, [])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
-  const handleSendMessage = () => {
-    if (!inputMessage.trim()) return
-
-    const userMessage: Message = {
-      id: messages.length + 1,
-      type: "user",
-      content: inputMessage,
-      timestamp: new Date(),
-    }
-
-    setMessages((prev) => [...prev, userMessage])
-    setInputMessage("")
-
-    // Simulate bot response
-    setTimeout(() => {
-      const botResponse: Message = {
-        id: messages.length + 2,
-        type: "bot",
-        content: getBotResponse(inputMessage),
-        timestamp: new Date(),
-        hasAudio: true,
-      }
-      setMessages((prev) => [...prev, botResponse])
+  // Update messages when conversation changes
+  useEffect(() => {
+    const session = conversationManager.getCurrentSession()
+    if (session) {
+      setMessages(session.messages)
       scrollToBottom()
-    }, 1000)
-  }
+    }
+  }, [])
 
-  const getBotResponse = (userInput: string): string => {
-    const input = userInput.toLowerCase()
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || isLoading) return
 
-    if (input.includes("fever") || input.includes("temperature")) {
-      return "I understand you have a fever. Can you tell me your temperature and how long you've had it? Also, do you have any other symptoms like headache, body ache, or chills?"
-    } else if (input.includes("headache") || input.includes("head pain")) {
-      return "Headaches can have various causes. On a scale of 1-10, how severe is your headache? Is it throbbing, sharp, or dull? Do you have any nausea or sensitivity to light?"
-    } else if (input.includes("cough")) {
-      return "I see you have a cough. Is it a dry cough or are you bringing up phlegm? How long have you had this cough? Do you have any chest pain or shortness of breath?"
-    } else {
-      return "Thank you for sharing that information. To better understand your condition, can you describe your symptoms in more detail? When did they start and how severe are they?"
+    const userInput = inputMessage.trim()
+    setInputMessage("")
+    setIsLoading(true)
+
+    try {
+      // Analyze symptoms with Gemini AI
+      const response = await geminiSymptomChecker.analyzeSymptoms(userInput)
+
+      // Update messages from conversation manager
+      const session = conversationManager.getCurrentSession()
+      if (session) {
+        setMessages([...session.messages])
+      }
+
+      scrollToBottom()
+    } catch (error) {
+      console.error('Error sending message:', error)
+      // Error handling is done in the geminiSymptomChecker
+    } finally {
+      setIsLoading(false)
     }
   }
+
+  // Remove getBotResponse since we're using Gemini AI now
 
   const handleVoiceInput = () => {
     setIsRecording(!isRecording)
     // Voice recording logic would go here
   }
 
-  const handlePlayAudio = (messageId: number) => {
+  const handlePlayAudio = (messageId: string) => {
     setIsPlaying(isPlaying === messageId ? null : messageId)
     // Text-to-speech logic would go here
+  }
+
+  const getUrgencyIcon = (urgencyLevel?: string) => {
+    switch (urgencyLevel) {
+      case 'emergency':
+        return <AlertTriangle className="h-4 w-4 text-red-500" />
+      case 'high':
+        return <AlertTriangle className="h-4 w-4 text-orange-500" />
+      case 'medium':
+        return <Clock className="h-4 w-4 text-yellow-500" />
+      case 'low':
+        return <CheckCircle className="h-4 w-4 text-green-500" />
+      default:
+        return null
+    }
+  }
+
+  const getUrgencyColor = (urgencyLevel?: string) => {
+    switch (urgencyLevel) {
+      case 'emergency':
+        return 'border-l-4 border-red-500 bg-red-50'
+      case 'high':
+        return 'border-l-4 border-orange-500 bg-orange-50'
+      case 'medium':
+        return 'border-l-4 border-yellow-500 bg-yellow-50'
+      case 'low':
+        return 'border-l-4 border-green-500 bg-green-50'
+      default:
+        return 'bg-white border'
+    }
   }
 
   return (
@@ -163,9 +195,54 @@ export default function SymptomCheckerPage() {
                     </Avatar>
 
                     <div
-                      className={`p-3 rounded-lg ${message.type === "user" ? "bg-blue-600 text-white" : "bg-white border"}`}
+                      className={`p-3 rounded-lg ${
+                        message.type === "user"
+                          ? "bg-blue-600 text-white"
+                          : getUrgencyColor(message.urgencyLevel)
+                      }`}
                     >
-                      <p className="text-sm">{message.content}</p>
+                      {/* Urgency indicator for bot messages */}
+                      {message.type === "bot" && message.urgencyLevel && (
+                        <div className="flex items-center space-x-2 mb-2">
+                          {getUrgencyIcon(message.urgencyLevel)}
+                          <span className="text-xs font-semibold uppercase tracking-wide">
+                            {message.urgencyLevel} Priority
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+
+                      {/* Show symptoms and medicines if available */}
+                      {message.type === "bot" && (message.symptoms?.length || message.medicines?.length) && (
+                        <div className="mt-3 pt-2 border-t border-gray-200">
+                          {message.symptoms?.length && (
+                            <div className="mb-2">
+                              <span className="text-xs font-semibold text-gray-600">Symptoms identified:</span>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {message.symptoms.map((symptom, index) => (
+                                  <span key={index} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                    {symptom}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {message.medicines?.length && (
+                            <div>
+                              <span className="text-xs font-semibold text-gray-600">Suggested medicines:</span>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {message.medicines.map((medicine, index) => (
+                                  <span key={index} className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                                    {medicine}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       <div className="flex items-center justify-between mt-2">
                         <span className={`text-xs ${message.type === "user" ? "text-blue-100" : "text-gray-500"}`}>
                           {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -185,6 +262,30 @@ export default function SymptomCheckerPage() {
                   </div>
                 </div>
               ))}
+
+              {/* Loading indicator */}
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="flex items-start space-x-2 max-w-xs lg:max-w-md">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-purple-100 text-purple-600">
+                        <Bot className="h-4 w-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="p-3 rounded-lg bg-white border">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex space-x-1">
+                          <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                          <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                        </div>
+                        <span className="text-sm text-gray-500">Analyzing your symptoms...</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div ref={messagesEndRef} />
             </div>
 
@@ -195,8 +296,9 @@ export default function SymptomCheckerPage() {
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   placeholder="Describe your symptoms..."
-                  onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
                   className="pr-12"
+                  disabled={isLoading}
                 />
                 <Button
                   size="sm"
@@ -211,7 +313,10 @@ export default function SymptomCheckerPage() {
                   )}
                 </Button>
               </div>
-              <Button onClick={handleSendMessage} disabled={!inputMessage.trim()}>
+              <Button
+                onClick={handleSendMessage}
+                disabled={!inputMessage.trim() || isLoading}
+              >
                 <Send className="h-4 w-4" />
               </Button>
             </div>

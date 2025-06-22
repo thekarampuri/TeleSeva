@@ -23,6 +23,7 @@ interface AuthContextType {
   logout: () => Promise<void>
   setUserRole: (role: 'patient' | 'doctor') => void
   setGuestMode: (isGuest: boolean) => void
+  redirectToRoleDashboard: (role: 'patient' | 'doctor') => void
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType)
@@ -43,9 +44,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Set user role in both localStorage and cookies
   function setUserRole(role: 'patient' | 'doctor') {
+    console.log(`Setting user role: ${role}`);
     localStorage.setItem("userRole", role)
     Cookies.set("userRole", role, { expires: 7 }) // Expires in 7 days
     setUserRoleState(role)
+    console.log(`User role set in localStorage, cookies, and state: ${role}`);
   }
 
   // Set guest mode in both localStorage and cookies
@@ -56,6 +59,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } else {
       localStorage.removeItem("userMode")
       Cookies.remove("userMode")
+    }
+  }
+
+  // Redirect to appropriate dashboard based on role
+  function redirectToRoleDashboard(role: 'patient' | 'doctor') {
+    console.log(`Redirecting to dashboard for role: ${role}`);
+
+    // Use window.location.href for a full page redirect to avoid middleware conflicts
+    if (role === 'doctor') {
+      console.log('Redirecting to doctor dashboard');
+      window.location.href = '/doctor-dashboard'
+    } else {
+      console.log('Redirecting to patient dashboard');
+      window.location.href = '/'
     }
   }
 
@@ -204,7 +221,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     login,
     logout,
     setUserRole,
-    setGuestMode
+    setGuestMode,
+    redirectToRoleDashboard
   }
 
   return (

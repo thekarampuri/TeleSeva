@@ -68,7 +68,7 @@ export default function AuthPage() {
   })
   const [role, setRole] = useState<'patient' | 'doctor'>('patient')
 
-  const { signup, login, setUserRole, setGuestMode } = useAuth()
+  const { signup, login, setUserRole, setGuestMode, redirectToRoleDashboard } = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -77,39 +77,36 @@ export default function AuthPage() {
 
     try {
       if (isLogin) {
-        console.log(`Attempting to log in with email: ${formData.email}`);
-        
+        console.log(`Attempting to log in with email: ${formData.email}, selected role: ${role}`);
+
         // Login and get the user's role from Firestore
         const { role: userRole } = await login(formData.email, formData.password)
-        console.log(`Login successful, user role: ${userRole || 'null'}`);
-        
+        console.log(`Login successful, user role from Firestore: ${userRole || 'null'}`);
+
+        // Set the selected role in the auth context to ensure proper redirection
+        setUserRole(role)
+        console.log(`Set user role in context: ${role}`);
+
         toast.success('Welcome back!')
-        
-        // Redirect based on the role from Firestore
-        if (userRole === 'doctor') {
-          console.log(`Redirecting to doctor dashboard`);
-          router.push('/doctor-dashboard')
-        } else {
-          console.log(`Redirecting to patient dashboard`);
-          router.push('/')
-        }
+
+        // Use a small delay to ensure cookies are set before redirect
+        setTimeout(() => {
+          redirectToRoleDashboard(role)
+        }, 100)
+
       } else {
         console.log(`Attempting to sign up with email: ${formData.email}, name: ${formData.name}, role: ${role}`);
-        
+
         // Signup with the selected role and save to Firestore
         await signup(formData.email, formData.password, formData.name, role)
         console.log(`Signup successful with role: ${role}`);
-        
+
         toast.success('Account created successfully!')
-        
-        // Redirect based on the selected role
-        if (role === 'doctor') {
-          console.log(`Redirecting to doctor dashboard`);
-          router.push('/doctor-dashboard')
-        } else {
-          console.log(`Redirecting to patient dashboard`);
-          router.push('/')
-        }
+
+        // Use a small delay to ensure cookies are set before redirect
+        setTimeout(() => {
+          redirectToRoleDashboard(role)
+        }, 100)
       }
     } catch (error: any) {
       console.error('Authentication error:', error);
@@ -224,30 +221,39 @@ export default function AuthPage() {
 
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="flex items-center space-x-4 mb-2">
-                  <Label>Role:</Label>
-                  <label className="flex items-center space-x-1">
-                    <input
-                      type="radio"
-                      name="role"
-                      value="patient"
-                      checked={role === 'patient'}
-                      onChange={() => setRole('patient')}
-                      className="accent-blue-600"
-                    />
-                    <span>Patient</span>
-                  </label>
-                  <label className="flex items-center space-x-1">
-                    <input
-                      type="radio"
-                      name="role"
-                      value="doctor"
-                      checked={role === 'doctor'}
-                      onChange={() => setRole('doctor')}
-                      className="accent-purple-600"
-                    />
-                    <span>Doctor</span>
-                  </label>
+                <div className="space-y-3 mb-6">
+                  <Label className="text-sm font-medium text-gray-700">
+                    {isLogin ? 'Access as:' : 'I am a:'}
+                  </Label>
+                  <div className="flex items-center space-x-6">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="role"
+                        value="patient"
+                        checked={role === 'patient'}
+                        onChange={() => setRole('patient')}
+                        className="accent-blue-600 w-4 h-4"
+                      />
+                      <span className="text-sm font-medium text-gray-700">Patient</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="role"
+                        value="doctor"
+                        checked={role === 'doctor'}
+                        onChange={() => setRole('doctor')}
+                        className="accent-purple-600 w-4 h-4"
+                      />
+                      <span className="text-sm font-medium text-gray-700">Doctor</span>
+                    </label>
+                  </div>
+                  {isLogin && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Select which interface you'd like to access
+                    </p>
+                  )}
                 </div>
 
                 <AnimatePresence mode="wait">
