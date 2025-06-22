@@ -6,7 +6,7 @@ export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
 
   // Define public paths that don't require authentication
-  const isPublicPath = path === '/auth' || path === '/landing-page'
+  const isPublicPath = path === '/auth' || path === '/landing-page' || path === '/'
 
   // Get the token from the cookies
   const token = request.cookies.get('authToken')?.value || ''
@@ -25,9 +25,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/landing-page', request.url))
   }
 
-  // If the path is '/dashboard' (patient dashboard) and no token exists, redirect to login
+  // If the path is '/dashboard' (patient dashboard) and no token exists, redirect to landing page
   if (path === '/dashboard' && !token && !isGuest) {
-    return NextResponse.redirect(new URL('/auth', request.url))
+    return NextResponse.redirect(new URL('/landing-page', request.url))
   }
 
   // If user is authenticated and tries to access auth page, redirect based on role
@@ -48,9 +48,9 @@ export function middleware(request: NextRequest) {
     if (userRole === 'patient') {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
-    // If they're not authenticated, redirect to auth
+    // If they're not authenticated, redirect to landing page
     else if (!token && !isGuest) {
-      return NextResponse.redirect(new URL('/auth', request.url))
+      return NextResponse.redirect(new URL('/landing-page', request.url))
     }
   }
 

@@ -140,17 +140,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Clear any stored user data
       localStorage.removeItem("userMode")
       localStorage.removeItem("userRole")
-      
+
       // Clear cookies
       Cookies.remove("authToken")
       Cookies.remove("userRole")
       Cookies.remove("userMode")
-      
+
       // Clear state
       setUserRoleState(null)
-      
-      // Redirect to auth page
-      router.push('/auth')
+
+      // Redirect to landing page
+      router.push('/landing-page')
     } catch (error) {
       console.error('Logout error:', error)
     }
