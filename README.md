@@ -2,6 +2,22 @@
 
 A comprehensive telemedicine platform built with Next.js, TypeScript, and Firebase, providing healthcare services including consultations, symptom checking, medicine management, and emergency services.
 
+## 📸 Screenshots
+
+Here are some screenshots of the TeleSeva platform:
+
+| Signup/Login Page                             | Home Page                     |
+|--------------------------------------|---------------------------------------|
+| ![Home](./screenshots/Screenshot%202025-06-22%20211856.png) | ![Consultation](./screenshots/Screenshot%202025-06-22%20211919.png) |
+
+| Doctor Cosultation Page                         | Ai Symptom Checker Page                        |
+|--------------------------------------|---------------------------------------|
+| ![Medicine](./screenshots/Screenshot%202025-06-22%20211937.png) | ![Emergency](./screenshots/Screenshot%202025-06-22%20212033.png) |
+
+| Health Facility Page                   |
+|--------------------------------------|
+| ![Reports](./screenshots/Screenshot%202025-06-22%20212101.png) |
+
 ## 🏗️ Project Structure
 
 ```
