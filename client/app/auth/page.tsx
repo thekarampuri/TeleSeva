@@ -381,6 +381,25 @@ export default function AuthPage() {
           </Card>
         </motion.div>
       </motion.div>
+
+      {/* Team Information Footer */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 1.0 }}
+        className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-10"
+      >
+        <div className="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full px-6 py-3 shadow-lg">
+          <p className="text-sm text-gray-600 text-center">
+            Made by team <span className="font-semibold text-blue-600">DeepShip</span> for{' '}
+            <span className="font-semibold text-purple-600">HackStorm</span>
+          </p>
+          <p className="text-xs text-gray-500 text-center mt-1">
+            Developed by <span className="font-medium">Omkarr Gondkar</span> &{' '}
+            <span className="font-medium">Akhil Karampuri</span>
+          </p>
+        </div>
+      </motion.div>
     </div>
   )
 }
