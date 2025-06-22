@@ -1,16 +1,17 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { 
-  MapPin, 
-  Navigation, 
-  Phone, 
-  Clock, 
+import {
+  MapPin,
+  Navigation,
+  Phone,
+  Clock,
   Star,
   Search,
   Filter,
@@ -18,93 +19,102 @@ import {
   Stethoscope,
   Pill,
   Eye,
-  Zap
+  Zap,
+  Loader2,
+  AlertCircle,
+  ExternalLink
 } from "lucide-react"
+import { getCurrentLocation, Location } from "@/lib/location"
+import { searchNearbyFacilities, Facility, getDirectionsUrl } from "@/lib/places"
+import { toast } from "sonner"
 
-const facilities = [
-  {
-    id: 1,
-    name: "City General Hospital",
-    type: "Hospital",
-    specialty: "Multi-specialty",
-    distance: "0.8 km",
-    time: "3 min drive",
-    rating: 4.5,
-    reviews: 1247,
-    phone: "+91-9876543210",
-    address: "123 Main Street, City Center",
-    services: ["Emergency", "ICU", "Surgery", "Cardiology"],
-    open24: true,
-    verified: true
-  },
-  {
-    id: 2,
-    name: "Apollo Medical Center",
-    type: "Hospital",
-    specialty: "Cardiology",
-    distance: "1.2 km",
-    time: "5 min drive",
-    rating: 4.8,
-    reviews: 892,
-    phone: "+91-9876543211",
-    address: "456 Health Avenue, Medical District",
-    services: ["Heart Care", "Diagnostics", "Emergency"],
-    open24: true,
-    verified: true
-  },
-  {
-    id: 3,
-    name: "HealthCare Plus Clinic",
-    type: "Clinic",
-    specialty: "General Medicine",
-    distance: "0.5 km",
-    time: "2 min walk",
-    rating: 4.3,
-    reviews: 324,
-    phone: "+91-9876543212",
-    address: "789 Wellness Road, Downtown",
-    services: ["Consultation", "Diagnostics", "Pharmacy"],
-    open24: false,
-    verified: true
-  },
-  {
-    id: 4,
-    name: "MedLife Pharmacy",
-    type: "Pharmacy",
-    specialty: "Medicine Store",
-    distance: "0.3 km",
-    time: "1 min walk",
-    rating: 4.6,
-    reviews: 156,
-    phone: "+91-9876543213",
-    address: "321 Medicine Lane, Local Market",
-    services: ["Prescription", "OTC", "Home Delivery"],
-    open24: true,
-    verified: true
-  },
-  {
-    id: 5,
-    name: "Vision Eye Care",
-    type: "Specialty Clinic",
-    specialty: "Ophthalmology",
-    distance: "2.1 km",
-    time: "8 min drive",
-    rating: 4.7,
-    reviews: 445,
-    phone: "+91-9876543214",
-    address: "654 Eye Care Center, Medical Plaza",
-    services: ["Eye Exam", "Surgery", "Laser Treatment"],
-    open24: false,
-    verified: true
+export default function FacilityFinderPage() {
+  const [facilities, setFacilities] = useState<Facility[]>([])
+  const [loading, setLoading] = useState(false)
+  const [locationLoading, setLocationLoading] = useState(false)
+  const [userLocation, setUserLocation] = useState<Location | null>(null)
+  const [selectedType, setSelectedType] = useState<'hospital' | 'clinic' | 'pharmacy' | 'all'>('all')
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const facilityTypes = [
+    {
+      name: "All",
+      value: "all" as const,
+      icon: MapPin,
+      count: facilities.length
+    },
+    {
+      name: "Hospitals",
+      value: "hospital" as const,
+      icon: Heart,
+      count: facilities.filter(f => f.type === 'hospital').length
+    },
+    {
+      name: "Clinics",
+      value: "clinic" as const,
+      icon: Stethoscope,
+      count: facilities.filter(f => f.type === 'clinic').length
+    },
+    {
+      name: "Pharmacies",
+      value: "pharmacy" as const,
+      icon: Pill,
+      count: facilities.filter(f => f.type === 'pharmacy').length
+    }
+  ]
+
+  const getUserLocation = async () => {
+    setLocationLoading(true)
+    try {
+      const location = await getCurrentLocation()
+      setUserLocation(location)
+      toast.success('Location detected successfully!')
+      await fetchNearbyFacilities(location)
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to get location')
+    } finally {
+      setLocationLoading(false)
+    }
   }
-]
 
-const facilityTypes = [
-  { name: "All", icon: MapPin, count: facilities.length },
-  { name: "Hospitals", icon: Heart, count: facilities.filter(f => f.type === 'Hospital').length },
-  { name: "Clinics", icon: Stethoscope, count: facilities.filter(f => f.type === 'Clinic' || f.type === 'Specialty Clinic').length },
-  { name: "Pharmacies", icon: Pill, count: facilities.filter(f => f.type === 'Pharmacy').length }
-]
+  const fetchNearbyFacilities = async (location: Location, type?: 'hospital' | 'clinic' | 'pharmacy') => {
+    setLoading(true)
+    try {
+      const response = await searchNearbyFacilities(location, 10000, type) // 10km radius
+      if (response.status === 'OK') {
+        setFacilities(response.facilities)
+        toast.success(`Found ${response.facilities.length} nearby facilities`)
+      } else {
+        toast.error(response.error || 'Failed to fetch facilities')
+      }
+    } catch (error) {
+      toast.error('Failed to fetch nearby facilities')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleTypeFilter = async (type: typeof selectedType) => {
+    setSelectedType(type)
+    if (userLocation) {
+      await fetchNearbyFacilities(userLocation, type === 'all' ? undefined : type)
+    }
+  }
+
+  const filteredFacilities = facilities.filter(facility =>
+    facility.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    facility.address.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  const handleDirections = (facility: Facility) => {
+    const url = getDirectionsUrl(facility.location, facility.name)
+    window.open(url, '_blank')
+  }
+
+  useEffect(() => {
+    // Auto-detect location on page load
+    getUserLocation()
+  }, [])
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -128,6 +138,93 @@ const itemVariants = {
 }
 
 export default function FacilityFinderPage() {
+  const [facilities, setFacilities] = useState<Facility[]>([])
+  const [loading, setLoading] = useState(false)
+  const [locationLoading, setLocationLoading] = useState(false)
+  const [userLocation, setUserLocation] = useState<Location | null>(null)
+  const [selectedType, setSelectedType] = useState<'hospital' | 'clinic' | 'pharmacy' | 'all'>('all')
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const facilityTypes = [
+    {
+      name: "All",
+      value: "all" as const,
+      icon: MapPin,
+      count: facilities.length
+    },
+    {
+      name: "Hospitals",
+      value: "hospital" as const,
+      icon: Heart,
+      count: facilities.filter(f => f.type === 'hospital').length
+    },
+    {
+      name: "Clinics",
+      value: "clinic" as const,
+      icon: Stethoscope,
+      count: facilities.filter(f => f.type === 'clinic').length
+    },
+    {
+      name: "Pharmacies",
+      value: "pharmacy" as const,
+      icon: Pill,
+      count: facilities.filter(f => f.type === 'pharmacy').length
+    }
+  ]
+
+  const getUserLocation = async () => {
+    setLocationLoading(true)
+    try {
+      const location = await getCurrentLocation()
+      setUserLocation(location)
+      toast.success('Location detected successfully!')
+      await fetchNearbyFacilities(location)
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to get location')
+    } finally {
+      setLocationLoading(false)
+    }
+  }
+
+  const fetchNearbyFacilities = async (location: Location, type?: 'hospital' | 'clinic' | 'pharmacy') => {
+    setLoading(true)
+    try {
+      const response = await searchNearbyFacilities(location, 10000, type) // 10km radius
+      if (response.status === 'OK') {
+        setFacilities(response.facilities)
+        toast.success(`Found ${response.facilities.length} nearby facilities`)
+      } else {
+        toast.error(response.error || 'Failed to fetch facilities')
+      }
+    } catch (error) {
+      toast.error('Failed to fetch nearby facilities')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleTypeFilter = async (type: typeof selectedType) => {
+    setSelectedType(type)
+    if (userLocation) {
+      await fetchNearbyFacilities(userLocation, type === 'all' ? undefined : type)
+    }
+  }
+
+  const filteredFacilities = facilities.filter(facility =>
+    facility.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    facility.address.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  const handleDirections = (facility: Facility) => {
+    const url = getDirectionsUrl(facility.location, facility.name)
+    window.open(url, '_blank')
+  }
+
+  useEffect(() => {
+    // Auto-detect location on page load
+    getUserLocation()
+  }, [])
+
   return (
     <MainLayout>
       <motion.div 
@@ -140,11 +237,24 @@ export default function FacilityFinderPage() {
         <motion.div variants={itemVariants} className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Health Facility Finder</h1>
-            <p className="text-gray-600 mt-1">Find nearby hospitals, clinics, and pharmacies</p>
+            <p className="text-gray-600 mt-1">
+              {userLocation
+                ? `Found ${facilities.length} facilities near you`
+                : "Find nearby hospitals, clinics, and pharmacies"
+              }
+            </p>
           </div>
-          <Button className="bg-blue-600 hover:bg-blue-700">
-            <MapPin className="h-4 w-4 mr-2" />
-            Use My Location
+          <Button
+            onClick={getUserLocation}
+            disabled={locationLoading}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {locationLoading ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <MapPin className="h-4 w-4 mr-2" />
+            )}
+            {locationLoading ? 'Detecting...' : 'Use My Location'}
           </Button>
         </motion.div>
 
@@ -152,14 +262,24 @@ export default function FacilityFinderPage() {
         <motion.div variants={itemVariants} className="flex space-x-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input 
-              placeholder="Search for hospitals, clinics, or pharmacies..." 
+            <Input
+              placeholder="Search for hospitals, clinics, or pharmacies..."
               className="pl-10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Button variant="outline">
-            <Filter className="h-4 w-4 mr-2" />
-            Filter
+          <Button
+            variant="outline"
+            onClick={() => userLocation && fetchNearbyFacilities(userLocation)}
+            disabled={!userLocation || loading}
+          >
+            {loading ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Filter className="h-4 w-4 mr-2" />
+            )}
+            Refresh
           </Button>
         </motion.div>
 
@@ -167,11 +287,24 @@ export default function FacilityFinderPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {facilityTypes.map((type, index) => (
             <motion.div key={type.name} variants={itemVariants}>
-              <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <Card
+                className={`cursor-pointer hover:shadow-md transition-all duration-300 ${
+                  selectedType === type.value
+                    ? 'ring-2 ring-blue-500 bg-blue-50'
+                    : 'hover:shadow-md'
+                }`}
+                onClick={() => handleTypeFilter(type.value)}
+              >
                 <CardContent className="p-4 text-center">
-                  <type.icon className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-                  <h3 className="font-semibold text-gray-900">{type.name}</h3>
-                  <p className="text-sm text-gray-600">{type.count} nearby</p>
+                  <type.icon className={`h-8 w-8 mx-auto mb-2 ${
+                    selectedType === type.value ? 'text-blue-600' : 'text-gray-600'
+                  }`} />
+                  <h3 className={`font-semibold ${
+                    selectedType === type.value ? 'text-blue-900' : 'text-gray-900'
+                  }`}>{type.name}</h3>
+                  <p className={`text-sm ${
+                    selectedType === type.value ? 'text-blue-700' : 'text-gray-600'
+                  }`}>{type.count} nearby</p>
                 </CardContent>
               </Card>
             </motion.div>
@@ -182,92 +315,151 @@ export default function FacilityFinderPage() {
         <motion.div variants={itemVariants}>
           <Card>
             <CardHeader>
-              <CardTitle>Nearby Facilities</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Nearby Facilities</CardTitle>
+                {loading && (
+                  <div className="flex items-center text-sm text-gray-500">
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Loading facilities...
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {facilities.map((facility, index) => (
-                <motion.div
-                  key={facility.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex items-start justify-between p-4 border rounded-lg hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start space-x-4 flex-1">
-                    <div className="p-3 bg-blue-100 rounded-lg">
-                      {facility.type === 'Hospital' ? <Heart className="h-6 w-6 text-blue-600" /> :
-                       facility.type === 'Pharmacy' ? <Pill className="h-6 w-6 text-blue-600" /> :
-                       <Stethoscope className="h-6 w-6 text-blue-600" />}
-                    </div>
-                    
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <h3 className="font-semibold text-gray-900">{facility.name}</h3>
-                        {facility.verified && (
+              {!userLocation ? (
+                <div className="text-center py-8">
+                  <MapPin className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Location Required</h3>
+                  <p className="text-gray-600 mb-4">
+                    Please allow location access to find nearby healthcare facilities
+                  </p>
+                  <Button onClick={getUserLocation} disabled={locationLoading}>
+                    {locationLoading ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <MapPin className="h-4 w-4 mr-2" />
+                    )}
+                    Enable Location
+                  </Button>
+                </div>
+              ) : filteredFacilities.length === 0 ? (
+                <div className="text-center py-8">
+                  <AlertCircle className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Facilities Found</h3>
+                  <p className="text-gray-600">
+                    {searchQuery
+                      ? "No facilities match your search criteria"
+                      : "No healthcare facilities found in your area"
+                    }
+                  </p>
+                </div>
+              ) : (
+                filteredFacilities.map((facility, index) => (
+                  <motion.div
+                    key={facility.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="flex items-start justify-between p-4 border rounded-lg hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-start space-x-4 flex-1">
+                      <div className="p-3 bg-blue-100 rounded-lg">
+                        {facility.type === 'hospital' ? <Heart className="h-6 w-6 text-blue-600" /> :
+                         facility.type === 'pharmacy' ? <Pill className="h-6 w-6 text-blue-600" /> :
+                         <Stethoscope className="h-6 w-6 text-blue-600" />}
+                      </div>
+
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <h3 className="font-semibold text-gray-900">{facility.name}</h3>
                           <Badge className="bg-green-100 text-green-700 text-xs">
                             Verified
                           </Badge>
+                          {facility.openNow && (
+                            <Badge className="bg-blue-100 text-blue-700 text-xs">
+                              <Clock className="h-3 w-3 mr-1" />
+                              Open Now
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="flex items-center space-x-4 mb-2">
+                          <span className="text-sm text-gray-600 capitalize">{facility.type}</span>
+                          {facility.rating && (
+                            <>
+                              <span className="text-sm text-gray-600">•</span>
+                              <div className="flex items-center">
+                                <Star className="h-4 w-4 text-yellow-400 mr-1" />
+                                <span className="text-sm font-medium">{facility.rating}</span>
+                                {facility.reviews && (
+                                  <span className="text-sm text-gray-500 ml-1">({facility.reviews})</span>
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
+
+                        <p className="text-sm text-gray-600 mb-2">{facility.address}</p>
+
+                        <div className="flex items-center space-x-4 mb-2">
+                          <div className="flex items-center text-sm text-gray-600">
+                            <Navigation className="h-4 w-4 mr-1" />
+                            {facility.distance} km away
+                          </div>
+                          <div className="flex items-center text-sm text-gray-600">
+                            <Clock className="h-4 w-4 mr-1" />
+                            ~{Math.round(facility.distance * 3)} min drive
+                          </div>
+                        </div>
+
+                        {facility.services && facility.services.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {facility.services.slice(0, 4).map((service, serviceIndex) => (
+                              <Badge key={serviceIndex} variant="outline" className="text-xs">
+                                {service}
+                              </Badge>
+                            ))}
+                            {facility.services.length > 4 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{facility.services.length - 4} more
+                              </Badge>
+                            )}
+                          </div>
                         )}
-                        {facility.open24 && (
-                          <Badge className="bg-blue-100 text-blue-700 text-xs">
-                            <Clock className="h-3 w-3 mr-1" />
-                            24/7
-                          </Badge>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center space-x-4 mb-2">
-                        <span className="text-sm text-gray-600">{facility.type}</span>
-                        <span className="text-sm text-gray-600">•</span>
-                        <span className="text-sm text-gray-600">{facility.specialty}</span>
-                        <div className="flex items-center">
-                          <Star className="h-4 w-4 text-yellow-400 mr-1" />
-                          <span className="text-sm font-medium">{facility.rating}</span>
-                          <span className="text-sm text-gray-500 ml-1">({facility.reviews})</span>
-                        </div>
-                      </div>
-                      
-                      <p className="text-sm text-gray-600 mb-2">{facility.address}</p>
-                      
-                      <div className="flex items-center space-x-4 mb-2">
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Navigation className="h-4 w-4 mr-1" />
-                          {facility.distance}
-                        </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Clock className="h-4 w-4 mr-1" />
-                          {facility.time}
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-wrap gap-1">
-                        {facility.services.map((service, serviceIndex) => (
-                          <Badge key={serviceIndex} variant="outline" className="text-xs">
-                            {service}
-                          </Badge>
-                        ))}
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex flex-col space-y-2 ml-4">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => window.open(`tel:${facility.phone}`)}
-                    >
-                      <Phone className="h-4 w-4 mr-1" />
-                      Call
-                    </Button>
-                    <Button 
-                      size="sm"
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      <Navigation className="h-4 w-4 mr-1" />
-                      Directions
-                    </Button>
-                  </div>
-                </motion.div>
+
+                    <div className="flex flex-col space-y-2 ml-4">
+                      {facility.phone && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(`tel:${facility.phone}`)}
+                        >
+                          <Phone className="h-4 w-4 mr-1" />
+                          Call
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        className="bg-blue-600 hover:bg-blue-700"
+                        onClick={() => handleDirections(facility)}
+                      >
+                        <Navigation className="h-4 w-4 mr-1" />
+                        Directions
+                      </Button>
+                      {facility.website && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(facility.website, '_blank')}
+                        >
+                          <ExternalLink className="h-4 w-4 mr-1" />
+                          Website
+                        </Button>
+                      )}
+                    </div>
+                  </motion.div>
               ))}
             </CardContent>
           </Card>
