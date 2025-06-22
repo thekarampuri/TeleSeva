@@ -3,12 +3,24 @@ import { SYMPTOM_CHECKER_SYSTEM_PROMPT, INITIAL_GREETING, EMERGENCY_KEYWORDS } f
 import { conversationManager, type Message, type PatientInfo } from './conversation-context';
 import { responseFormatter, type FormattedResponse } from './response-formatter';
 import { errorHandler } from './error-handler';
+import { getModelConfiguration } from './gemini-models';
 
 // Initialize the Gemini AI client
-const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || '');
+const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
-// Get the generative model
-const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+if (!apiKey) {
+  console.error('NEXT_PUBLIC_GEMINI_API_KEY is not set in environment variables');
+}
+
+const genAI = new GoogleGenerativeAI(apiKey || '');
+
+// Get the generative model - using the correct model name for the current API
+// Available models: gemini-1.5-flash, gemini-1.5-pro
+const MODEL_NAME = 'gemini-1.5-flash';
+const model = genAI.getGenerativeModel({
+  model: MODEL_NAME,
+  generationConfig: getModelConfiguration(MODEL_NAME),
+});
 
 export interface SymptomCheckerResponse {
   message: string;
@@ -101,6 +113,11 @@ This is not a time for home remedies or waiting to see how you feel. Please seek
       const result = await model.generateContent(fullPrompt);
       const response = await result.response;
       const text = response.text();
+
+      // Check if response is empty or invalid
+      if (!text || text.trim().length === 0) {
+        throw new Error('Empty response from Gemini API');
+      }
 
       // Format the response
       const formattedResponse = responseFormatter.formatResponse(text);
