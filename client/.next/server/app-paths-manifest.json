@@ -1,8 +1,8 @@
 {
-  "/page": "app/page.js",
-  "/reports/page": "app/reports/page.js",
-  "/symptom-checker/page": "app/symptom-checker/page.js",
+  "/auth/page": "app/auth/page.js",
   "/consultation/page": "app/consultation/page.js",
-  "/medicine/page": "app/medicine/page.js",
-  "/notifications/page": "app/notifications/page.js"
+  "/page": "app/page.js",
+  "/symptom-checker/page": "app/symptom-checker/page.js",
+  "/health-tips/page": "app/health-tips/page.js",
+  "/medicine/page": "app/medicine/page.js"
 }
